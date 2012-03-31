@@ -34,6 +34,9 @@ module html {
         attribute [Reflect] DOMString srcdoc;
         attribute [Reflect] DOMString width;
 
+        // FIXME: webkit prefix will be removed when implementation is complete.
+        attribute [Reflect] boolean webkitseamless;
+
         // Introduced in DOM Level 2:
         readonly attribute [CheckSecurityForNode] Document contentDocument;
 
