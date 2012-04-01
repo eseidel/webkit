@@ -116,6 +116,11 @@ void HTMLIFrameElement::removedFromDocument()
     HTMLFrameElementBase::removedFromDocument();
 }
 
+bool HTMLIFrameElement::shouldDisplaySeamlessly() const
+{
+    return hasAttribute(webkitseamlessAttr) && document()->mayDisplaySeamlessWithParent();
+}
+
 #if ENABLE(MICRODATA)
 String HTMLIFrameElement::itemValueText() const
 {

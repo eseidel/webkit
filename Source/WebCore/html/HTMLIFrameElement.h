@@ -41,10 +41,12 @@ private:
 
     virtual void insertedIntoDocument();
     virtual void removedFromDocument();
-    
+
     virtual bool rendererIsNeeded(const NodeRenderingContext&);
     virtual RenderObject* createRenderer(RenderArena*, RenderStyle*);
-       
+
+    bool shouldDisplaySeamlessly() const;
+
 #if ENABLE(MICRODATA)
     virtual String itemValueText() const OVERRIDE;
     virtual void setItemValueText(const String&, ExceptionCode&) OVERRIDE;
