@@ -4851,6 +4851,18 @@ bool Document::useSecureKeyboardEntryWhenActive() const
     return m_useSecureKeyboardEntryWhenActive;
 }
 
+static bool isEligibleForSeamless(Document* parent, Document* child)
+{
+    // It should not matter what we return for the top-most document.
+    if (!parent)
+        return false;
+    if (parent->isSandboxed(SandboxSeamlessIframes))
+        return false;
+    if (parent->securityOrigin()->canAccess(child->securityOrigin()))
+        return true;
+    return parent->securityOrigin()->canRequest(child->url());
+}
+
 void Document::initSecurityContext()
 {
     if (haveInitializedSecurityOrigin()) {
@@ -4903,6 +4915,11 @@ void Document::initSecurityContext()
             securityOrigin()->enforceFilePathSeparation();
         }
     }
+
+    // FIXME: What happens if we inherit the security origin? This check may need to be later.
+    // <iframe seamless src="about:blank"> likely won't work as-is.
+    Document* parentDocument = ownerElement() ? ownerElement()->document() : 0;
+    m_mayDisplaySeamlessWithParent = isEligibleForSeamless(parentDocument, this);
 
     if (!shouldInheritSecurityOriginFromOwner(m_url))
         return;
