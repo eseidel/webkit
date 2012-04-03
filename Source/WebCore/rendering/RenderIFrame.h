@@ -41,6 +41,11 @@ private:
     virtual void computeLogicalHeight() OVERRIDE;
     virtual void computeLogicalWidth() OVERRIDE;
 
+    virtual LayoutUnit minPreferredLogicalWidth() const OVERRIDE;
+    virtual LayoutUnit maxPreferredLogicalWidth() const OVERRIDE;
+
+    virtual bool shouldComputeSizeAsReplaced() const OVERRIDE;
+
     virtual void layout() OVERRIDE;
 
     virtual bool isRenderIFrame() const OVERRIDE { return true; }
