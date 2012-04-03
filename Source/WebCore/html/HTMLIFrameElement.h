@@ -32,6 +32,8 @@ class HTMLIFrameElement : public HTMLFrameElementBase {
 public:
     static PassRefPtr<HTMLIFrameElement> create(const QualifiedName&, Document*);
 
+    bool shouldDisplaySeamlessly() const;
+
 private:
     HTMLIFrameElement(const QualifiedName&, Document*);
 
@@ -44,8 +46,6 @@ private:
 
     virtual bool rendererIsNeeded(const NodeRenderingContext&);
     virtual RenderObject* createRenderer(RenderArena*, RenderStyle*);
-
-    bool shouldDisplaySeamlessly() const;
 
 #if ENABLE(MICRODATA)
     virtual String itemValueText() const OVERRIDE;

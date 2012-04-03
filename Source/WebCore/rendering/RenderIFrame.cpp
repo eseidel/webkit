@@ -56,7 +56,7 @@ void RenderIFrame::computeLogicalHeight()
         FrameView* view = static_cast<FrameView*>(widget());
         if (!view)
             return;
-        int border = borderTop() + borderBottom();
+        LayoutUnit border = borderTop() + borderBottom();
         setHeight(max<LayoutUnit>(height(), view->contentsHeight() + border));
     }
 }
@@ -79,13 +79,23 @@ void RenderIFrame::computeLogicalWidth()
     }
 }
 
-bool RenderIFrame::flattenFrame()
+
+
+bool RenderIFrame::isSeamless() const
+{
+    return node() && node()->hasTagName(iframeTag) && static_cast<HTMLIFrameElement*>(node())->shouldDisplaySeamlessly();
+}
+
+bool RenderIFrame::flattenFrame() const
 {
     if (!node() || !node()->hasTagName(iframeTag))
         return false;
 
     HTMLIFrameElement* element = static_cast<HTMLIFrameElement*>(node());
     Frame* frame = element->document()->frame();
+
+    if (isSeamless())
+        return false; // Seamless iframes are already "flat", don't try to flatten them.
 
     bool enabled = frame && frame->settings() && frame->settings()->frameFlatteningEnabled();
 
@@ -114,6 +124,7 @@ void RenderIFrame::layout()
 
     if (flattenFrame()) {
         layoutWithFlattening(style()->width().isFixed(), style()->height().isFixed());
+        // FIXME: Is early return really OK here? What about transform/overflow code below?
         return;
     }
 
