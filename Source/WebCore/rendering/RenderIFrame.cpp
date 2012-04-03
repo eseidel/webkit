@@ -63,6 +63,10 @@ void RenderIFrame::computeLogicalHeight()
 
 void RenderIFrame::computeLogicalWidth()
 {
+    // When we're seamless, we behave like a block.  Thankfully RenderBox has all the right logic for this.
+    if (isSeamless())
+        return RenderBox::computeLogicalWidth();
+
     RenderPart::computeLogicalWidth();
     if (!flattenFrame())
         return;
@@ -79,7 +83,33 @@ void RenderIFrame::computeLogicalWidth()
     }
 }
 
+bool RenderIFrame::shouldComputeSizeAsReplaced() const
+{
+    // We size ourself more like a block than a replaced element when seamless.
+    return !isSeamless();
+}
 
+LayoutUnit RenderIFrame::minPreferredLogicalWidth() const
+{
+    if (!isSeamless())
+        return RenderFrameBase::minPreferredLogicalWidth();
+
+    RenderBox* contentBox = embeddedContentBox();
+    if (!contentBox)
+        return 0;
+    return contentBox->minPreferredLogicalWidth();
+}
+
+LayoutUnit RenderIFrame::maxPreferredLogicalWidth() const
+{
+    if (!isSeamless())
+        return RenderFrameBase::maxPreferredLogicalWidth();
+
+    RenderBox* contentBox = embeddedContentBox();
+    if (!contentBox)
+        return 0;
+    return contentBox->maxPreferredLogicalWidth();
+}
 
 bool RenderIFrame::isSeamless() const
 {
