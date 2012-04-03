@@ -1,0 +1,5 @@
+FAIL window.getComputedStyle(iframe1).width should be 300px. Was -4px.
+PASS window.getComputedStyle(iframe1).height is "300px"
+FAIL window.getComputedStyle(iframe2).width should be 50px. Was -4px.
+FAIL window.getComputedStyle(iframe2).height should be 50px. Was 0px.
+ 
