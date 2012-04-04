@@ -30,6 +30,8 @@
 
 namespace WebCore {
 
+class RenderView;
+
 class RenderIFrame : public RenderFrameBase {
 public:
     explicit RenderIFrame(Element*);
@@ -51,6 +53,8 @@ private:
     virtual bool isRenderIFrame() const OVERRIDE { return true; }
 
     virtual const char* renderName() const OVERRIDE { return "RenderPartObject"; } // Lying for now to avoid breaking tests
+
+    RenderView* contentRootRenderer() const;
 };
 
 inline RenderIFrame* toRenderIFrame(RenderObject* object)
