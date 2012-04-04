@@ -94,10 +94,10 @@ LayoutUnit RenderIFrame::minPreferredLogicalWidth() const
     if (!isSeamless())
         return RenderFrameBase::minPreferredLogicalWidth();
 
-    RenderBox* contentBox = embeddedContentBox();
-    if (!contentBox)
+    RenderView* childRoot = contentRootRenderer();
+    if (!childRoot)
         return 0;
-    return contentBox->minPreferredLogicalWidth();
+    return childRoot->minPreferredLogicalWidth();
 }
 
 LayoutUnit RenderIFrame::maxPreferredLogicalWidth() const
@@ -105,15 +105,22 @@ LayoutUnit RenderIFrame::maxPreferredLogicalWidth() const
     if (!isSeamless())
         return RenderFrameBase::maxPreferredLogicalWidth();
 
-    RenderBox* contentBox = embeddedContentBox();
-    if (!contentBox)
+    RenderView* childRoot = contentRootRenderer();
+    if (!childRoot)
         return 0;
-    return contentBox->maxPreferredLogicalWidth();
+    return childRoot->maxPreferredLogicalWidth();
 }
 
 bool RenderIFrame::isSeamless() const
 {
     return node() && node()->hasTagName(iframeTag) && static_cast<HTMLIFrameElement*>(node())->shouldDisplaySeamlessly();
+}
+
+RenderView* RenderIFrame::contentRootRenderer() const
+{
+    // FIXME: Is this always a valid cast?  What about plugins?
+    FrameView* childFrameView = static_cast<FrameView*>(widget());
+    return childFrameView ? static_cast<RenderView*>(childFrameView->frame()->contentRenderer()) : 0;
 }
 
 bool RenderIFrame::flattenFrame() const
