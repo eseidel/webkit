@@ -97,6 +97,10 @@ LayoutUnit RenderIFrame::minPreferredLogicalWidth() const
     RenderView* childRoot = contentRootRenderer();
     if (!childRoot)
         return 0;
+
+    if (childRoot->preferredLogicalWidthsDirty())
+        childRoot->computePreferredLogicalWidths();
+
     return childRoot->minPreferredLogicalWidth();
 }
 
@@ -108,6 +112,10 @@ LayoutUnit RenderIFrame::maxPreferredLogicalWidth() const
     RenderView* childRoot = contentRootRenderer();
     if (!childRoot)
         return 0;
+
+    if (childRoot->preferredLogicalWidthsDirty())
+        childRoot->computePreferredLogicalWidths();
+
     return childRoot->maxPreferredLogicalWidth();
 }
 
