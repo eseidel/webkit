@@ -63,6 +63,7 @@
 #include "FrameView.h"
 #include "HTMLDocument.h"
 #include "HTMLElement.h"
+#include "HTMLIFrameElement.h"
 #include "HTMLInputElement.h"
 #include "HTMLNames.h"
 #include "HTMLOptionElement.h"
@@ -1969,6 +1970,9 @@ void CSSStyleSelector::adjustRenderStyle(RenderStyle* style, RenderStyle* parent
         // clear how that should work.
         if (style->display() == INLINE && style->styleType() == NOPSEUDO && parentStyle && style->writingMode() != parentStyle->writingMode())
             style->setDisplay(INLINE_BLOCK);
+
+        if (e && e->hasTagName(iframeTag) && static_cast<HTMLIFrameElement*>(e)->shouldDisplaySeamlessly())
+            style->setDisplay(BLOCK);
 
         // After performing the display mutation, check table rows.  We do not honor position:relative on
         // table rows or cells.  This has been established in CSS2.1 (and caused a crash in containingBlock()
