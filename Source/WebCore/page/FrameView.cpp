@@ -2977,6 +2977,7 @@ bool FrameView::doLayoutWithFrameFlattening(bool allowSubtree)
     ASSERT_UNUSED(root, !root->needsLayout());
 
     return true;
+}
 
 bool FrameView::inSeamlessIframe() const
 {
