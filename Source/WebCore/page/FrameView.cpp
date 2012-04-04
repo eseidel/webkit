@@ -2048,7 +2048,7 @@ void FrameView::scheduleRelayout()
 
     // When frame flattening is enabled, the contents of the frame could affect the layout of the parent frames.
     // Also invalidate parent frame starting from the owner element of this frame.
-    if (isInChildFrameWithFrameFlattening() && m_frame->ownerRenderer())
+    if (m_frame->ownerRenderer() && (isInChildFrameWithFrameFlattening() || inSeamlessIframe()))
         m_frame->ownerRenderer()->setNeedsLayout(true, MarkContainingBlockChain);
 
     int delay = m_frame->document()->minimumLayoutDelay();
@@ -2977,6 +2977,17 @@ bool FrameView::doLayoutWithFrameFlattening(bool allowSubtree)
     ASSERT_UNUSED(root, !root->needsLayout());
 
     return true;
+
+bool FrameView::inSeamlessIframe() const
+{
+    if (!parent() || !m_frame->ownerElement())
+        return false;
+
+    if (!m_frame->ownerElement()->hasTagName(iframeTag))
+        return false;
+
+    RenderIFrame* iframeRenderer = toRenderIFrame(m_frame->ownerElement()->renderPart());
+    return iframeRenderer->isSeamless();
 }
 
 void FrameView::updateControlTints()
