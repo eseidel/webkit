@@ -1,5 +1,5 @@
 PASS iframe.seamless is true
 PASS nestedFrame.seamless is true
-FAIL window.getComputedStyle(iframe).width should be 200px. Was 300px.
-PASS window.getComputedStyle(iframe).height is "150px"
+FAIL window.getComputedStyle(iframe).width should be 200px. Was -4px.
+FAIL window.getComputedStyle(iframe).height should be 150px. Was 0px.
 
