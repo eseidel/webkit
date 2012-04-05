@@ -85,7 +85,7 @@ void RenderIFrame::computeLogicalWidth()
 
 bool RenderIFrame::shouldComputeSizeAsReplaced() const
 {
-    // We size ourself more like a block than a replaced element when seamless.
+    // When we're seamless, we use normal block/box sizing code except when inline.
     return !isSeamless();
 }
 
@@ -164,16 +164,30 @@ void RenderIFrame::layout()
 {
     ASSERT(needsLayout());
 
-    RenderPart::computeLogicalWidth();
-    RenderPart::computeLogicalHeight();
-
     if (flattenFrame()) {
+        RenderPart::computeLogicalWidth();
+        RenderPart::computeLogicalHeight();
         layoutWithFlattening(style()->width().isFixed(), style()->height().isFixed());
         // FIXME: Is early return really OK here? What about transform/overflow code below?
         return;
     }
 
-    RenderPart::layout();
+    computeLogicalWidth();
+    // The 3 main phases of layout are: 1. Compute width, 2. Layout kids, 3. Compute Height.
+    // For Seamless iframes, our "kids" are the subframe, so we layout the subframe synchronously here.
+    if (isSeamless()) {
+        setHeight(0); // Clear our height before laying out our kids.
+        updateWidgetPosition();
+        // Laying out our kids is normally responsible for adjusting our height, so we set it here.
+        FrameView* view = static_cast<FrameView*>(widget());
+        if (view) {
+            // Replaced elements do not respect padding, so we just add border to the child's height.
+            LayoutUnit border = borderTop() + borderBottom();
+            setHeight(max<LayoutUnit>(height(), view->contentsHeight() + border));
+        }
+    }
+    // Once our kids have determined our height we actually apply min/max to our height.
+    computeLogicalHeight();
 
     m_overflow.clear();
     addVisualEffectOverflow();
