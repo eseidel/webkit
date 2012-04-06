@@ -400,6 +400,7 @@ public:
 private:
     static RenderStyle* s_styleNotYetAvailable;
 
+    void addStylesheetsFromSeamlessParents();
     void addAuthorRulesAndCollectUserRulesFromSheets(const Vector<RefPtr<StyleSheetInternal> >*, RuleSet& userStyle);
 
     void cacheBorderAndBackground();
