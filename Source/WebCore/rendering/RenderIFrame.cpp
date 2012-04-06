@@ -173,7 +173,7 @@ void RenderIFrame::layout()
     }
 
     computeLogicalWidth();
-    // The 3 main phases of layout are: 1. Compute width, 2. Layout kids, 3. Compute Height.
+    // The 3 main phases of layout are: 1. Compute width, 2. Layout kids, 3. Compute height.
     // For Seamless iframes, our "kids" are the subframe, so we layout the subframe synchronously here.
     if (isSeamless()) {
         setHeight(0); // Clear our height before laying out our kids.
