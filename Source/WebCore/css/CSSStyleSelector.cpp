@@ -1151,22 +1151,30 @@ inline void CSSStyleSelector::initForStyleResolve(Element* e, RenderStyle* paren
     m_checker.setPseudoStyle(pseudoID);
 
     m_parentNode = e ? e->parentNodeForRenderingAndStyle() : 0;
-
     if (parentStyle)
         m_parentStyle = parentStyle;
     else
         m_parentStyle = m_parentNode ? m_parentNode->renderStyle() : 0;
 
     Node* docElement = e ? e->document()->documentElement() : 0;
+    if (e == docElement) {
+        ASSERT(!m_parentNode);
+        ASSERT(!m_parentStyle);
+        HTMLFrameOwnerElement* ownerElement = document()->ownerElement();
+        if (ownerElement && ownerElement->hasTagName(iframeTag)) {
+            HTMLIFrameElement* containingIframe = static_cast<HTMLIFrameElement*>(ownerElement);
+            // If we're displaying seamlessly with our parent, inherit from our iframe's style.
+            if (containingIframe->shouldDisplaySeamlessly())
+                m_parentStyle = containingIframe->renderStyle();
+        }
+    }
+
     RenderStyle* docStyle = m_checker.document()->renderStyle();
     m_rootElementStyle = docElement && e != docElement ? docElement->renderStyle() : docStyle;
 
     m_style = 0;
-
     m_pendingImageProperties.clear();
-
     m_ruleList = 0;
-
     m_fontDirty = false;
 }
 
