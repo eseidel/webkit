@@ -1116,7 +1116,7 @@ void CSSStyleSelector::matchAllRules(MatchResult& result)
 #endif
 }
 
-inline void CSSStyleSelector::initElement(Element* e)
+inline void ResolveInfo::initElement(Element* e)
 {
     if (m_element != e) {
         m_element = e;

@@ -116,6 +116,25 @@ enum RuleMatchingBehavior {
     MatchOnlyUserAgentRules,
 };
 
+class ResolveInfo {
+public:
+    ResolveInfo()
+        : m_element(0)
+        , m_styledElement(0)
+        , m_elementLinkState(0)
+    {
+    }
+
+    void initElement(Element*);
+
+    Element* element() const { return m_element; }
+
+private:
+    Element* m_element;
+    StyledElement* m_styledElement;
+    EInsideLink m_elementLinkState;
+};
+
 // This class selects a RenderStyle for a given element based on a collection of stylesheets.
 class CSSStyleSelector {
     WTF_MAKE_NONCOPYABLE(CSSStyleSelector); WTF_MAKE_FAST_ALLOCATED;
@@ -143,7 +162,6 @@ public:
     RenderStyle* style() const { return m_style.get(); }
     RenderStyle* parentStyle() const { return m_parentStyle; }
     RenderStyle* rootElementStyle() const { return m_rootElementStyle; }
-    Element* element() const { return m_element; }
     Document* document() const { return m_checker.document(); }
     FontDescription fontDescription() { return style()->fontDescription(); }
     FontDescription parentFontDescription() {return parentStyle()->fontDescription(); }
@@ -478,10 +496,7 @@ private:
     RefPtr<RenderStyle> m_style;
     RenderStyle* m_parentStyle;
     RenderStyle* m_rootElementStyle;
-    Element* m_element;
-    StyledElement* m_styledElement;
     RenderRegion* m_regionForStyling;
-    EInsideLink m_elementLinkState;
     ContainerNode* m_parentNode;
     CSSValue* m_lineHeightValue;
     bool m_fontDirty;
