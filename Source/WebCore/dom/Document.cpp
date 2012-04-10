@@ -4858,6 +4858,8 @@ static bool isEligibleForSeamless(Document* parent, Document* child)
         return false;
     if (parent->isSandboxed(SandboxSeamlessIframes))
         return false;
+    if (child->isSrcdocDocument())
+        return true;
     if (parent->securityOrigin()->canAccess(child->securityOrigin()))
         return true;
     return parent->securityOrigin()->canRequest(child->url());
@@ -4916,9 +4918,14 @@ void Document::initSecurityContext()
         }
     }
 
+    Document* parentDocument = ownerElement() ? ownerElement()->document() : 0;
+    if (parentDocument && m_frame->loader()->shouldTreatURLAsSrcdocDocument(url())) {
+        m_isSrcdocDocument = true;
+        setBaseURLOverride(parentDocument->baseURL());
+    }
+
     // FIXME: What happens if we inherit the security origin? This check may need to be later.
     // <iframe seamless src="about:blank"> likely won't work as-is.
-    Document* parentDocument = ownerElement() ? ownerElement()->document() : 0;
     m_mayDisplaySeamlessWithParent = isEligibleForSeamless(parentDocument, this);
 
     if (!shouldInheritSecurityOriginFromOwner(m_url))
@@ -4934,11 +4941,6 @@ void Document::initSecurityContext()
     if (!ownerFrame) {
         didFailToInitializeSecurityOrigin();
         return;
-    }
-
-    if (m_frame->loader()->shouldTreatURLAsSrcdocDocument(url())) {
-        m_isSrcdocDocument = true;
-        setBaseURLOverride(ownerFrame->document()->baseURL());
     }
 
     if (isSandboxed(SandboxOrigin)) {
