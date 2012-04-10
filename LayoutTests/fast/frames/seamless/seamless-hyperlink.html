@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<script src="../../js/resources/js-test-pre.js"></script>
+<iframe id="iframe" src="data:text/html,FAIL
+    <iframe seamless srcdoc='<a href=data:text/html,PASS>'></iframe>
+    <script>
+        window.onload=function() {
+            frames[0].document.getElementsByTagName('a')[0].click();
+        }
+    </script>">
+</iframe>
+<script>
+window.onload = function() {
+    window.iframe = document.getElementById('iframe');
+    shouldBeEqualToString("iframe.contentDocument.body.textContent", "PASS");
+}
+</script>
