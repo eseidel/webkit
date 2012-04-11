@@ -5,7 +5,7 @@ if (window.layoutTestController)
     layoutTestController.waitUntilDone();
 
 window.addEventListener('message', function(evt) {
-    shouldBeEqualToString("frames[0].document.body.textContent", "DONE\n");
+    shouldBeEqualToString("frames[0].frames[0].document.body.textContent", "DONE\n");
 
     if (window.layoutTestController)
         layoutTestController.notifyDone();
@@ -16,7 +16,7 @@ window.addEventListener('message', function(evt) {
     <iframe seamless
             srcdoc='
                 <script>
-                    window.location = &quot;resources/done.html&quot;;
+                    window.location.replace(&quot;resources/done.html&quot;);
                 </script>
             '>
     </iframe>
