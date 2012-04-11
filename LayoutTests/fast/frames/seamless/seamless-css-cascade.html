@@ -30,5 +30,16 @@ window.onload = function () {
     // on the iframe element instead of taking their initial values.)
     window.rootElement = iframe.contentDocument.documentElement;
     shouldBeEqualToString("window.getComputedStyle(rootElement).color", "rgb(255, 165, 0)"); // orange, inherited from parent iframe.
+
+    // Inner styles should dynamically recalculate when the iframe's style changes.
+    window.iframe.style.color = "rgb(1, 2, 3)"
+    shouldBeEqualToString("window.getComputedStyle(rootElement).color", "rgb(1, 2, 3)"); // dynamically updated after parent iframe changed.
+
+    // Similarly, changes/additions to the parent stylesheets should propgate to the child frame:
+    var styleSheet = document.createElement("style");
+    styleSheet.textContent = "#one { color: rgb(3, 2, 1); }";
+    document.head.appendChild(styleSheet);
+    // #one's style is only specified by this parent, so adding a later sheet should override the color and update the child frame.
+    shouldBeEqualToString("window.getComputedStyle(one).color", "rgb(3, 2, 1)");
 }
 </script>
