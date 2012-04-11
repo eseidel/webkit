@@ -1157,8 +1157,16 @@ inline void CSSStyleSelector::initForStyleResolve(Element* e, RenderStyle* paren
 
     Node* docElement = e ? e->document()->documentElement() : 0;
     if (e == docElement) {
-        ASSERT(!m_parentNode);
-        ASSERT(!m_parentStyle);
+        ASSERT(!parentStyle);
+        ASSERT(m_parentStyle);
+        ASSERT(m_parentNode == e->document());
+        // Normally the DocumentElement would inherit its style from the Document's style
+        // which is created by CSSStyleSelector::styleForDocument below.
+        // However the spec explicitly states that we should replace those
+        // default values with ones inherited from the iframe.
+        // FIXME: It's possible this may need to move into styleForDocument instead
+        // to handle cases where the Document's style contains things we should be inheriting
+        // like perhaps the <iframe seamless designMode="on"> case?
         HTMLFrameOwnerElement* ownerElement = document()->ownerElement();
         if (ownerElement && ownerElement->hasTagName(iframeTag)) {
             HTMLIFrameElement* containingIframe = static_cast<HTMLIFrameElement*>(ownerElement);
