@@ -20,5 +20,13 @@ window.onload = function () {
     // should set the intrinsic height of the iframe to the height of the bounding
     // box around the content rendered in the iframe at its current width...
     shouldBeEqualToString("window.getComputedStyle(iframe).height", "100px");
+
+    // Make sure dynamic updates work too.
+    iframe.contentDocument.documentElement.style.height = "200px";
+    shouldBeEqualToString("window.getComputedStyle(iframe).height", "200px");
+
+    window.parentDiv = document.getElementById("parent");
+    window.parentDiv.style.width = "100px";
+    shouldBeEqualToString("window.getComputedStyle(iframe).width", "100px");
 }
 </script>
