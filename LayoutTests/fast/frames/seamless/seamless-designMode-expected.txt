@@ -1,0 +1,2 @@
+FAIL window.iframe.contentDocument.body.textContent should be PASS. Was FAIL.
+
