@@ -5768,6 +5768,14 @@ bool Document::visualUpdatesAllowed() const
         || loadEventFinished();
 }
 
+bool Document::shouldDisplaySeamlesslyWithParent() const
+{
+    HTMLFrameOwnerElement* ownerElement = document()->ownerElement();
+    if (!ownerElement)
+        return false;
+    return m_mayDisplaySeamlessWithParent && ownerElement->hasTagName(iframeTag) && ownerElement->fastHasAttribute(seamlessAttr);
+}
+
 DocumentLoader* Document::loader() const
 {
     if (!m_frame)
