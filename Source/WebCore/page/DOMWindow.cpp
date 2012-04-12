@@ -1652,9 +1652,6 @@ void DOMWindow::setLocation(const String& urlString, DOMWindow* activeWindow, DO
     if (!activeDocument)
         return;
 
-    if (!activeDocument->canNavigate(m_frame))
-        return;
-
     Frame* firstFrame = firstWindow->frame();
     if (!firstFrame)
         return;

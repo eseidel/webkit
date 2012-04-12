@@ -2997,6 +2997,16 @@ Frame* FrameLoader::findFrameForNavigation(const AtomicString& name, Document* a
 {
     Frame* frame = m_frame->tree()->find(name);
 
+    if (activeDocument) {
+        if (!activeDocument->canNavigate(frame))
+            return 0;
+    } else {
+        // FIXME: Eventually all callers should supply the actual activeDocument
+        // so we can call canNavigate with the right document.
+        if (!m_frame->document()->canNavigate(frame))
+            return 0;
+    }
+
     // From http://www.whatwg.org/specs/web-apps/current-work/#seamlessLinks:
     //
     // If the source browsing context is the same as the browsing context
@@ -3016,15 +3026,6 @@ Frame* FrameLoader::findFrameForNavigation(const AtomicString& name, Document* a
         ASSERT(frame != m_frame);
     }
 
-    if (activeDocument) {
-        if (!activeDocument->canNavigate(frame))
-            return 0;
-    } else {
-        // FIXME: Eventually all callers should supply the actual activeDocument
-        // so we can call canNavigate with the right document.
-        if (!m_frame->document()->canNavigate(frame))
-            return 0;
-    }
     return frame;
 }
 

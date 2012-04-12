@@ -2,17 +2,22 @@
 <script src="../../js/resources/js-test-pre.js"></script>
 <script>
 if (window.layoutTestController)
-    layoutTestController.dumpChildFramesAsText();
+    layoutTestController.waitUntilDone();
+
+window.addEventListener('message', function(evt) {
+    shouldBeEqualToString("frames[0].document.body.textContent", "DONE\n");
+
+    if (window.layoutTestController)
+        layoutTestController.notifyDone();
+}, false);
 </script>
-This test should not cause any navigation.
 <iframe srcdoc="
-    PASS
+    Waiting...
     <iframe seamless sandbox='allow-scripts'
             srcdoc='
                 <script>
                     window.location = &quot;resources/done.html&quot;;
                 </script>
-                PASS
             '>
     </iframe>
 "></iframe>
