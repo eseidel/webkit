@@ -5,7 +5,7 @@ if (window.layoutTestController)
     layoutTestController.waitUntilDone();
 
 window.addEventListener('message', function(evt) {
-    shouldBeEqualToString("frames[0].document.body.textContent", "DONE\n");
+    shouldBeEqualToString("frames[0].frames[0].document.body.textContent", "DONE\n");
 
     if (window.layoutTestController)
         layoutTestController.notifyDone();
@@ -15,8 +15,12 @@ window.addEventListener('message', function(evt) {
     Waiting...
     <script>
         window.onload=function() {
-            frames[0].document.getElementsByTagName('a')[0].click();
+            frames[0].document.getElementsByTagName('form')[0].submit();
         }
     </script>
-    <iframe seamless srcdoc='<a href=resources/done.html>Click me</a>'></iframe>
+    <iframe seamless
+            srcdoc='<form target=_self method=GET action=resources/done.html>
+                        <input type=submit>
+                    </from>
+    '></iframe>
 "></iframe>

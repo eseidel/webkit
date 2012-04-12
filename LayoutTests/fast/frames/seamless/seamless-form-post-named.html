@@ -15,8 +15,12 @@ window.addEventListener('message', function(evt) {
     Waiting...
     <script>
         window.onload=function() {
-            frames[0].document.getElementsByTagName('a')[0].click();
+            frames[0].document.getElementsByTagName('form')[0].submit();
         }
     </script>
-    <iframe seamless srcdoc='<a href=resources/done.html>Click me</a>'></iframe>
+    <iframe name=tg seamless
+            srcdoc='<form target=tg method=POST action=resources/done.html>
+                        <input type=submit>
+                    </from>
+    '></iframe>
 "></iframe>

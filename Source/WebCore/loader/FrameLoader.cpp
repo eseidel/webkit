@@ -68,6 +68,7 @@
 #include "FrameView.h"
 #include "HTMLAnchorElement.h"
 #include "HTMLFormElement.h"
+#include "HTMLIFrameElement.h"
 #include "HTMLNames.h"
 #include "HTMLObjectElement.h"
 #include "HTTPParsers.h"
@@ -312,9 +313,7 @@ void FrameLoader::submitForm(PassRefPtr<FormSubmission> submission)
         return;
     }
 
-    Frame* targetFrame = m_frame->tree()->find(submission->target());
-    if (!submission->state()->sourceDocument()->canNavigate(targetFrame))
-        return;
+    Frame* targetFrame = findFrameForNavigation(submission->target(), submission->state()->sourceDocument());
     if (!targetFrame) {
         if (!DOMWindow::allowPopUp(m_frame) && !ScriptController::processingUserGesture())
             return;
@@ -823,7 +822,7 @@ void FrameLoader::loadURLIntoChildFrame(const KURL& url, const String& referer, 
         }
     }
 
-    childFrame->loader()->loadURL(url, referer, String(), false, FrameLoadTypeRedirectWithLockedBackForwardList, 0, 0);
+    childFrame->loader()->loadURL(url, referer, "_self", false, FrameLoadTypeRedirectWithLockedBackForwardList, 0, 0);
 }
 
 #if ENABLE(WEB_ARCHIVE) || ENABLE(MHTML)
@@ -1214,7 +1213,7 @@ void FrameLoader::loadURL(const KURL& newURL, const String& referrer, const Stri
     // The search for a target frame is done earlier in the case of form submission.
     Frame* targetFrame = isFormSubmission ? 0 : findFrameForNavigation(frameName);
     if (targetFrame && targetFrame != m_frame) {
-        targetFrame->loader()->loadURL(newURL, referrer, String(), lockHistory, newLoadType, event, formState.release());
+        targetFrame->loader()->loadURL(newURL, referrer, "_self", lockHistory, newLoadType, event, formState.release());
         return;
     }
 
@@ -2987,14 +2986,45 @@ void FrameLoader::checkDidPerformFirstNavigation()
     }
 }
 
-Frame* FrameLoader::findFrameForNavigation(const AtomicString& name)
+// FIXME: Where should this function go?
+static bool isDisplayingSeamlesslyWithParent(Frame* frame)
+{
+    HTMLFrameOwnerElement* owner = frame->ownerElement();
+    return owner && owner->hasTagName(iframeTag) && static_cast<HTMLIFrameElement*>(owner)->shouldDisplaySeamlessly();
+}
+
+Frame* FrameLoader::findFrameForNavigation(const AtomicString& name, Document* activeDocument)
 {
     Frame* frame = m_frame->tree()->find(name);
-    // FIXME: We calling canNavigate on the Document that's requesting the
-    // navigation, not based on the document that happens to be displayed in
-    // this Frame.
-    if (!m_frame->document()->canNavigate(frame))
-        return 0;
+
+    // From http://www.whatwg.org/specs/web-apps/current-work/#seamlessLinks:
+    //
+    // If the source browsing context is the same as the browsing context
+    // being navigated, and this browsing context has its seamless browsing
+    // context flag set, and the browsing context being navigated was not
+    // chosen using an explicit self-navigation override, then find the
+    // nearest ancestor browsing context that does not have its seamless
+    // browsing context flag set, and continue these steps as if that
+    // browsing context was the one that was going to be navigated instead.
+    if (isDisplayingSeamlesslyWithParent(m_frame) && frame == m_frame && name != "_self") {
+        for (Frame* ancestor = m_frame; ancestor; ancestor = ancestor->tree()->parent(true)) {
+            if (!isDisplayingSeamlesslyWithParent(ancestor)) {
+                frame = ancestor;
+                break;
+            }
+        }
+        ASSERT(frame != m_frame);
+    }
+
+    if (activeDocument) {
+        if (!activeDocument->canNavigate(frame))
+            return 0;
+    } else {
+        // FIXME: Eventually all callers should supply the actual activeDocument
+        // so we can call canNavigate with the right document.
+        if (!m_frame->document()->canNavigate(frame))
+            return 0;
+    }
     return frame;
 }
 
@@ -3246,8 +3276,7 @@ Frame* createWindow(Frame* openerFrame, Frame* lookupFrame, const FrameLoadReque
     ASSERT(!features.dialog || request.frameName().isEmpty());
 
     if (!request.frameName().isEmpty() && request.frameName() != "_blank") {
-        Frame* frame = lookupFrame->tree()->find(request.frameName());
-        if (frame && openerFrame->document()->canNavigate(frame)) {
+        if (Frame* frame = lookupFrame->loader()->findFrameForNavigation(request.frameName(), openerFrame->document())) {
             if (Page* page = frame->page())
                 page->chrome()->focus();
             created = false;
