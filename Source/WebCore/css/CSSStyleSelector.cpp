@@ -1162,9 +1162,6 @@ inline void StyleResolver::initForStyleResolve(Element* e, RenderStyle* parentSt
 
     Node* docElement = e ? e->document()->documentElement() : 0;
     if (e == docElement) {
-        ASSERT(!parentStyle);
-        ASSERT(m_parentStyle);
-        ASSERT(m_parentNode == e->document());
         // Normally the DocumentElement would inherit its style from the Document's style
         // which is created by CSSStyleSelector::styleForDocument below.
         // However the spec explicitly states that we should replace those
@@ -1176,8 +1173,11 @@ inline void StyleResolver::initForStyleResolve(Element* e, RenderStyle* parentSt
         if (ownerElement && ownerElement->hasTagName(iframeTag)) {
             HTMLIFrameElement* containingIframe = static_cast<HTMLIFrameElement*>(ownerElement);
             // If we're displaying seamlessly with our parent, inherit from our iframe's style.
-            if (containingIframe->shouldDisplaySeamlessly())
+            if (containingIframe->shouldDisplaySeamlessly()) {
+                ASSERT(!parentStyle);
+                ASSERT(m_parentNode == e->document());
                 m_parentStyle = containingIframe->renderStyle();
+            }
         }
     }
 
