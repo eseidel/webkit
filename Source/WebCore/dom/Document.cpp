@@ -5853,6 +5853,24 @@ void Document::didRemoveTouchEventHandler()
         mainFrame->notifyChromeClientTouchEventHandlerCountChanged();
 }
 
+HTMLIFrameElement* Document::seamlessParentIFrame() const
+{
+    if (!shouldDisplaySeamlesslyWithParent())
+        return 0;
+
+    HTMLFrameOwnerElement* ownerElement = document()->ownerElement();
+    ASSERT(ownerElement->hasTagName(iframeTag));
+    return static_cast<HTMLIFrameElement*>(ownerElement);
+}
+
+bool Document::shouldDisplaySeamlesslyWithParent() const
+{
+    HTMLFrameOwnerElement* ownerElement = document()->ownerElement();
+    if (!ownerElement)
+        return false;
+    return m_mayDisplaySeamlessWithParent && ownerElement->hasTagName(iframeTag) && ownerElement->fastHasAttribute(seamlessAttr);
+}
+
 DocumentLoader* Document::loader() const
 {
     if (!m_frame)

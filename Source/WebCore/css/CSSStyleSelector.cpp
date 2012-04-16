@@ -1160,28 +1160,8 @@ inline void StyleResolver::initForStyleResolve(Element* e, RenderStyle* parentSt
     else
         m_parentStyle = m_parentNode ? m_parentNode->renderStyle() : 0;
 
-    Node* docElement = e ? e->document()->documentElement() : 0;
-    if (e == docElement) {
-        // Normally the DocumentElement would inherit its style from the Document's style
-        // which is created by CSSStyleSelector::styleForDocument below.
-        // However the spec explicitly states that we should replace those
-        // default values with ones inherited from the iframe.
-        // FIXME: It's possible this may need to move into styleForDocument instead
-        // to handle cases where the Document's style contains things we should be inheriting
-        // like perhaps the <iframe seamless designMode="on"> case?
-        HTMLFrameOwnerElement* ownerElement = document()->ownerElement();
-        if (ownerElement && ownerElement->hasTagName(iframeTag)) {
-            HTMLIFrameElement* containingIframe = static_cast<HTMLIFrameElement*>(ownerElement);
-            // If we're displaying seamlessly with our parent, inherit from our iframe's style.
-            if (containingIframe->shouldDisplaySeamlessly()) {
-                ASSERT(!parentStyle);
-                ASSERT(m_parentNode == e->document());
-                m_parentStyle = containingIframe->renderStyle();
-            }
-        }
-    }
-
     RenderStyle* docStyle = m_checker.document()->renderStyle();
+    Node* docElement = e ? e->document()->documentElement() : 0;
     m_rootElementStyle = docElement && e != docElement ? docElement->renderStyle() : docStyle;
 
     m_style = 0;
@@ -1540,7 +1520,19 @@ PassRefPtr<RenderStyle> StyleResolver::styleForDocument(Document* document, CSSF
 {
     Frame* frame = document->frame();
 
+    // HTML5 states that seamless iframes should replace default CSS values
+    // with values inherited from the containing iframe element. However,
+    // some values (such as the case of designMode = "on") still need to
+    // be set by this "document style".
     RefPtr<RenderStyle> documentStyle = RenderStyle::create();
+    bool seamlessWithParent = document->shouldDisplaySeamlesslyWithParent();
+    if (seamlessWithParent) {
+        RenderStyle* iframeStyle = document->seamlessParentIFrame()->renderStyle();
+        if (iframeStyle)
+            documentStyle->inheritFrom(iframeStyle);
+    }
+
+    // FIXME: It's not clear that we want to override all of these values in the seamless case!
     documentStyle->setDisplay(BLOCK);
     documentStyle->setRTLOrdering(document->visuallyOrdered() ? VisualOrder : LogicalOrder);
     documentStyle->setZoom(frame && !document->printing() ? frame->pageZoomFactor() : 1);
