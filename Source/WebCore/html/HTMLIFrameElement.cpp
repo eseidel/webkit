@@ -125,11 +125,9 @@ void HTMLIFrameElement::didRecalcStyle(StyleChange styleChange)
 {
     if (!shouldDisplaySeamlessly())
         return;
-    // Document will only recompute the "Document Style" if forced, since seamless causes
-    // the Document's style to inherit from the iframe's, Force is currently required here.
     Document* childDocument = contentDocument();
     if (styleChange >= Inherit || childDocument->childNeedsStyleRecalc() || childDocument->needsStyleRecalc())
-        contentDocument()->recalcStyle(Force);
+        contentDocument()->recalcStyle(styleChange);
 }
 
 #if ENABLE(MICRODATA)

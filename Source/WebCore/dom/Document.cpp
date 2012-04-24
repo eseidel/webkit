@@ -1721,7 +1721,8 @@ void Document::recalcStyle(StyleChange change)
     if (m_pendingStyleRecalcShouldForce)
         change = Force;
 
-    if (change == Force) {
+    // Recalculating the root style (on the document) is not needed in the common case.
+    if ((change >= Detach) || (shouldDisplaySeamlesslyWithParent() && (change >= Inherit))) {
         // style selector may set this again during recalc
         m_hasNodesWithPlaceholderStyle = false;
         
