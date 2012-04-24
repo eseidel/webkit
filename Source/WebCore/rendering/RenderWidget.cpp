@@ -118,6 +118,16 @@ void RenderWidget::willBeDestroyed()
         document()->axObjectCache()->remove(this);
     }
 
+    // If the widget is a child FrameView and has been destroyed
+    // clear the child's render tree now, even though references
+    // to this widget may live on for a bit.
+    if (m_widget && m_widget->isFrameView()) {
+        FrameView* frameView = static_cast<FrameView*>(m_widget.get());
+        Document* childDocument = frameView->frame()->document();
+        if (childDocument->attached())
+            childDocument->detach();
+    }
+
     setWidget(0);
 
     RenderReplaced::willBeDestroyed();

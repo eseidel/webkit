@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<script src="../js/resources/js-test-pre.js"></script>
+<div id="wrapper">
+    <iframe srcdoc="FAIL"></iframe>
+</div>
+<script>
+description("Test that the containing iframe's style is recomputed before computing the inner document's style.");
+window.onload = function() {
+    document.body.offsetTop; // Force the entire document to layout.
+    window.wrapper = document.getElementById("wrapper").style.display = "none";
+    shouldBe("window.frames[0].document.body.offsetWidth", "0");
+}
+</script>

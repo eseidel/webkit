@@ -1,0 +1,7 @@
+Test that the containing iframe's style is recomputed before computing the inner document's style.
+
+On success, you will see a series of "PASS" messages, followed by "TEST COMPLETE".
+
+
+PASS window.frames[0].document.body.offsetWidth is 0
+
