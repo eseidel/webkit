@@ -41,6 +41,7 @@ inline HTMLIFrameElement::HTMLIFrameElement(const QualifiedName& tagName, Docume
     : HTMLFrameElementBase(tagName, document)
 {
     ASSERT(hasTagName(iframeTag));
+    setHasCustomWillOrDidRecalcStyle();
 }
 
 PassRefPtr<HTMLIFrameElement> HTMLIFrameElement::create(const QualifiedName& tagName, Document* document)
@@ -118,6 +119,17 @@ void HTMLIFrameElement::removedFrom(Node* insertionPoint)
 bool HTMLIFrameElement::shouldDisplaySeamlessly() const
 {
     return hasAttribute(seamlessAttr) && contentDocument() && contentDocument()->mayDisplaySeamlessWithParent();
+}
+
+void HTMLIFrameElement::didRecalcStyle(StyleChange styleChange)
+{
+    if (!shouldDisplaySeamlessly())
+        return;
+    // Document will only recompute the "Document Style" if forced, since seamless causes
+    // the Document's style to inherit from the iframe's, Force is currently required here.
+    Document* childDocument = contentDocument();
+    if (styleChange >= Inherit || childDocument->childNeedsStyleRecalc() || childDocument->needsStyleRecalc())
+        contentDocument()->recalcStyle(Force);
 }
 
 #if ENABLE(MICRODATA)
