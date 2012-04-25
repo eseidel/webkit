@@ -4,6 +4,7 @@
 <iframe id="iframe" seamless sandbox="allow-same-origin" src="resources/nested-seamless.html"></iframe>
 </div>
 <script>
+description("Test that sandbox disables nested seamless iframes correctly.")
 window.onload = function () {
     window.iframe = document.getElementById("iframe");
     shouldBeTrue("iframe.seamless");

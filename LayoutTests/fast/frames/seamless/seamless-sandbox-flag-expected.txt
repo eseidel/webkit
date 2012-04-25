@@ -1,3 +1,8 @@
+Test that sandbox disables nested seamless iframes correctly.
+
+On success, you will see a series of "PASS" messages, followed by "TEST COMPLETE".
+
+
 PASS iframe.seamless is true
 PASS nestedFrame.seamless is true
 PASS window.getComputedStyle(iframe).width is "200px"

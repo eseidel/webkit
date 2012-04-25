@@ -7,13 +7,14 @@
     <iframe id="iframe2" seamless style="display: inline" src="resources/two-inline-blocks.html"></iframe><div style="background-color: purple; display: inline-block; width: 100px; height: 50px;"></div>
 </div>
 <script>
+description("Test that inline seamless iframes 'shrink-wrap' their contents like inline-blocks do.")
 window.onload = function () {
     window.parent1 = document.getElementById("parent1");
     window.parent2 = document.getElementById("parent2");
     window.iframe1 = document.getElementById("iframe1");
     window.iframe2 = document.getElementById("iframe2");
 
-    // Both iframes will "shrinkwrap" around their content as they are floated.
+    // Both iframes will "shrinkwrap" around their content as they are display: inline.
     // iframe1 will not wrap, but iframe2 will.
     // The inline should not prevent the purple block from sitting on the same line.
     shouldBeEqualToString("window.getComputedStyle(iframe1).width", "150px");

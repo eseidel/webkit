@@ -4,6 +4,7 @@
 <iframe id="iframe" seamless src="resources/quirks-square.html"></iframe>
 </div>
 <script>
+description("Test that a quirks-mode document inside a seamless iframe sizes correctly.")
 window.onload = function () {
     window.iframe = document.getElementById("iframe");
     shouldBeTrue("iframe.seamless");

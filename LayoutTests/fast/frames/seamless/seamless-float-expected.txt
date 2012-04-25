@@ -1,3 +1,8 @@
+Test that floated seamless iframes 'shrink-wrap' their contents, as floated divs would.
+
+On success, you will see a series of "PASS" messages, followed by "TEST COMPLETE".
+
+
 FAIL window.getComputedStyle(iframe1).width should be 150px. Was 100px.
 FAIL window.getComputedStyle(iframe1).height should be 50px. Was 104px.
 PASS window.getComputedStyle(iframe2).width is "100px"

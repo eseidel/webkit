@@ -4,6 +4,7 @@
 <iframe id="iframe" seamless src="resources/nested-seamless.html"></iframe>
 </div>
 <script>
+description("Test that nested seamless iframes size correctly.")
 window.onload = function () {
     window.iframe = document.getElementById("iframe");
     shouldBeTrue("iframe.seamless");

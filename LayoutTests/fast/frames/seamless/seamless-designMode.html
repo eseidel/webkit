@@ -2,6 +2,7 @@
 <script src="../../js/resources/js-test-pre.js"></script>
 <iframe id="iframe" seamless srcdoc="FAIL"></iframe>
 <script>
+description("Test that being a seamless iframe does not break designMode.")
 window.onload = function () {
     window.iframe = document.getElementById("iframe");
     window.iframe.contentDocument.designMode = "on";
