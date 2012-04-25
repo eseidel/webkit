@@ -2,12 +2,13 @@
 <script src="../../js/resources/js-test-pre.js"></script>
 <style>
 iframe { color: orange; }
-div { color: white; }
+.test { color: white; }
 #one { color: red; }
 #two { color: blue; }
 </style>
 <iframe id="iframe" seamless src="resources/css-cascade-child.html"></iframe>
 <script>
+description("Test that seamless iframes inherit styles from their parent iframe, and dymanically update when their parent document's styles update.")
 window.onload = function () {
     window.iframe = document.getElementById("iframe");
     window.one = iframe.contentDocument.getElementById("one");
