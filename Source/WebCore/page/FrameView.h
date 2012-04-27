@@ -426,7 +426,6 @@ private:
 
     bool isInChildFrameWithFrameFlattening();
     bool doLayoutWithFrameFlattening(bool allowSubtree);
-    bool inSeamlessIframe() const;
 
     virtual AXObjectCache* axObjectCache() const;
     void notifyWidgetsInAllFrames(WidgetNotification);

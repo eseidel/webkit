@@ -2048,7 +2048,7 @@ void FrameView::scheduleRelayout()
 
     // When frame flattening is enabled, the contents of the frame could affect the layout of the parent frames.
     // Also invalidate parent frame starting from the owner element of this frame.
-    if (m_frame->ownerRenderer() && (isInChildFrameWithFrameFlattening() || inSeamlessIframe()))
+    if (m_frame->ownerRenderer() && isInChildFrameWithFrameFlattening())
         m_frame->ownerRenderer()->setNeedsLayout(true, MarkContainingBlockChain);
 
     int delay = m_frame->document()->minimumLayoutDelay();
@@ -2935,18 +2935,21 @@ FrameView* FrameView::parentFrameView() const
 
 bool FrameView::isInChildFrameWithFrameFlattening()
 {
-    if (!parent() || !m_frame->ownerElement() || !m_frame->settings() || !m_frame->settings()->frameFlatteningEnabled())
+    if (!parent() || !m_frame->ownerElement())
         return false;
 
     // Frame flattening applies when the owner element is either in a frameset or
     // an iframe with flattening parameters.
     if (m_frame->ownerElement()->hasTagName(iframeTag)) {
         RenderIFrame* iframeRenderer = toRenderIFrame(m_frame->ownerElement()->renderPart());
-
-        if (iframeRenderer->flattenFrame())
+        if (iframeRenderer->flattenFrame() || iframeRenderer->isSeamless())
             return true;
+    }
 
-    } else if (m_frame->ownerElement()->hasTagName(frameTag))
+    if (!m_frame->settings() || !m_frame->settings()->frameFlatteningEnabled())
+        return false;
+
+    if (m_frame->ownerElement()->hasTagName(frameTag))
         return true;
 
     return false;
@@ -2977,18 +2980,6 @@ bool FrameView::doLayoutWithFrameFlattening(bool allowSubtree)
     ASSERT_UNUSED(root, !root->needsLayout());
 
     return true;
-}
-
-bool FrameView::inSeamlessIframe() const
-{
-    if (!parent() || !m_frame->ownerElement())
-        return false;
-
-    if (!m_frame->ownerElement()->hasTagName(iframeTag))
-        return false;
-
-    RenderIFrame* iframeRenderer = toRenderIFrame(m_frame->ownerElement()->renderPart());
-    return iframeRenderer->isSeamless();
 }
 
 void FrameView::updateControlTints()

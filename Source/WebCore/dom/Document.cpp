@@ -1642,6 +1642,13 @@ void Document::scheduleForcedStyleRecalc()
 
 void Document::scheduleStyleRecalc()
 {
+    if (shouldDisplaySeamlesslyWithParent()) {
+        // When we're seamless, our parent document manages our style recalcs.
+        ownerElement()->setNeedsStyleRecalc();
+        ownerElement()->document()->scheduleStyleRecalc();
+        return;
+    }
+
     if (m_styleRecalcTimer.isActive() || inPageCache())
         return;
 
@@ -1695,7 +1702,14 @@ void Document::recalcStyle(StyleChange change)
     
     if (m_inStyleRecalc)
         return; // Guard against re-entrancy. -dwh
-    
+
+    // Make sure our ancestor chain is up-to-date before we resolve style
+    // on ourselves (in case our owning iframe is now display: none for instance).
+    if (Document* parentDoc = parentDocument())
+        parentDoc->recalcStyle(NoChange);
+
+    // FIXME: In the seamless case, our parent should have recalc'd our style, so we could return early here.
+
     if (m_hasDirtyStyleResolver)
         updateActiveStylesheets(RecalcStyleImmediately);
 
@@ -5878,14 +5892,14 @@ HTMLIFrameElement* Document::seamlessParentIFrame() const
     if (!shouldDisplaySeamlesslyWithParent())
         return 0;
 
-    HTMLFrameOwnerElement* ownerElement = document()->ownerElement();
+    HTMLFrameOwnerElement* ownerElement = this->ownerElement();
     ASSERT(ownerElement->hasTagName(iframeTag));
     return static_cast<HTMLIFrameElement*>(ownerElement);
 }
 
 bool Document::shouldDisplaySeamlesslyWithParent() const
 {
-    HTMLFrameOwnerElement* ownerElement = document()->ownerElement();
+    HTMLFrameOwnerElement* ownerElement = this->ownerElement();
     if (!ownerElement)
         return false;
     return m_mayDisplaySeamlessWithParent && ownerElement->hasTagName(iframeTag) && ownerElement->fastHasAttribute(seamlessAttr);

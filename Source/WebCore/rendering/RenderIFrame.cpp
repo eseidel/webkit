@@ -176,18 +176,34 @@ void RenderIFrame::layout()
     // The 3 main phases of layout are: 1. Compute width, 2. Layout kids, 3. Compute height.
     // For Seamless iframes, our "kids" are the subframe, so we layout the subframe synchronously here.
     if (isSeamless()) {
+        FrameView* childFrameView = static_cast<FrameView*>(widget());
+        RenderView* childRoot = childFrameView ? static_cast<RenderView*>(childFrameView->frame()->contentRenderer()) : 0;
+
         setHeight(0); // Clear our height before laying out our kids.
-        updateWidgetPosition();
+        updateWidgetPosition(); // Tell the Widget about our new Width/Height.
+
+        if (childRoot->preferredLogicalWidthsDirty())
+            childRoot->computePreferredLogicalWidths();
+        childFrameView->layout();
+
         // Laying out our kids is normally responsible for adjusting our height, so we set it here.
-        FrameView* view = static_cast<FrameView*>(widget());
-        if (view) {
-            // Replaced elements do not respect padding, so we just add border to the child's height.
-            LayoutUnit border = borderTop() + borderBottom();
-            setHeight(max<LayoutUnit>(height(), view->contentsHeight() + border));
-        }
+        // Replaced elements do not respect padding, so we just add border to the child's height.
+        setHeight(childFrameView->contentsHeight() + borderTop() + borderBottom());
     }
+
     // Once our kids have determined our height we actually apply min/max to our height.
     computeLogicalHeight();
+
+    if (isSeamless()) {
+        updateWidgetPosition(); // Notify the Widget of our final height.
+
+        FrameView* childFrameView = static_cast<FrameView*>(widget());
+        RenderView* childRoot = childFrameView ? static_cast<RenderView*>(childFrameView->frame()->contentRenderer()) : 0;
+
+        ASSERT(!childFrameView->layoutPending());
+        ASSERT(!childRoot->needsLayout());
+        ASSERT(!childRoot->firstChild() || !childRoot->firstChild()->firstChild() || !childRoot->firstChild()->firstChild()->needsLayout());
+    }
 
     m_overflow.clear();
     addVisualEffectOverflow();
