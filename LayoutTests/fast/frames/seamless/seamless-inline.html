@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <script src="../../js/resources/js-test-pre.js"></script>
 <div id="parent1" style="width: 200px">
-    <iframe id="iframe1" seamless style="display: inline" src="resources/two-inline-blocks.html"></iframe><div style="background-color: purple; display: inline-block; width: 100px; height: 50px;"></div>
+    <iframe id="iframe1" seamless style="display: inline" src="resources/two-inline-blocks.html"></iframe><div style="background-color: purple; display: inline-block; width: 25px; height: 50px;"></div>
 </div>
 <div id="parent2" style="width: 100px">
-    <iframe id="iframe2" seamless style="display: inline" src="resources/two-inline-blocks.html"></iframe><div style="background-color: purple; display: inline-block; width: 100px; height: 50px;"></div>
+    <iframe id="iframe2" seamless style="display: inline" src="resources/two-inline-blocks.html"></iframe><div style="background-color: purple; display: inline-block; width: 25px; height: 50px;"></div>
 </div>
 <script>
 description("Test that inline seamless iframes 'shrink-wrap' their contents like inline-blocks do.")
@@ -14,15 +14,19 @@ window.onload = function () {
     window.iframe1 = document.getElementById("iframe1");
     window.iframe2 = document.getElementById("iframe2");
 
+    // Seamless iframes behave like inline blocks when marked inline.
+    shouldBeEqualToString("window.getComputedStyle(iframe1).display", "inline-block");
+    shouldBeEqualToString("window.getComputedStyle(iframe2).display", "inline-block");
+
     // Both iframes will "shrinkwrap" around their content as they are display: inline.
     // iframe1 will not wrap, but iframe2 will.
-    // The inline should not prevent the purple block from sitting on the same line.
+    // The inline should not prevent the purple block from sitting on the same line in the first example.
     shouldBeEqualToString("window.getComputedStyle(iframe1).width", "150px");
     shouldBeEqualToString("window.getComputedStyle(iframe1).height", "50px");
     shouldBeEqualToString("window.getComputedStyle(parent1).height", "50px");
 
     shouldBeEqualToString("window.getComputedStyle(iframe2).width", "100px");
     shouldBeEqualToString("window.getComputedStyle(iframe2).height", "100px");
-    shouldBeEqualToString("window.getComputedStyle(parent2).height", "100px");
+    shouldBeEqualToString("window.getComputedStyle(parent2).height", "150px");
 }
 </script>

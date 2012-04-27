@@ -89,6 +89,11 @@ bool RenderIFrame::shouldComputeSizeAsReplaced() const
     return !isSeamless();
 }
 
+bool RenderIFrame::isInlineBlockOrInlineTable() const
+{
+    return isSeamless() && isInline();
+}
+
 LayoutUnit RenderIFrame::minPreferredLogicalWidth() const
 {
     if (!isSeamless())
@@ -97,9 +102,6 @@ LayoutUnit RenderIFrame::minPreferredLogicalWidth() const
     RenderView* childRoot = contentRootRenderer();
     if (!childRoot)
         return 0;
-
-    if (childRoot->preferredLogicalWidthsDirty())
-        childRoot->computePreferredLogicalWidths();
 
     return childRoot->minPreferredLogicalWidth();
 }
@@ -112,9 +114,6 @@ LayoutUnit RenderIFrame::maxPreferredLogicalWidth() const
     RenderView* childRoot = contentRootRenderer();
     if (!childRoot)
         return 0;
-
-    if (childRoot->preferredLogicalWidthsDirty())
-        childRoot->computePreferredLogicalWidths();
 
     return childRoot->maxPreferredLogicalWidth();
 }
@@ -176,14 +175,10 @@ void RenderIFrame::layout()
     // The 3 main phases of layout are: 1. Compute width, 2. Layout kids, 3. Compute height.
     // For Seamless iframes, our "kids" are the subframe, so we layout the subframe synchronously here.
     if (isSeamless()) {
-        FrameView* childFrameView = static_cast<FrameView*>(widget());
-        RenderView* childRoot = childFrameView ? static_cast<RenderView*>(childFrameView->frame()->contentRenderer()) : 0;
-
         setHeight(0); // Clear our height before laying out our kids.
         updateWidgetPosition(); // Tell the Widget about our new Width/Height.
 
-        if (childRoot->preferredLogicalWidthsDirty())
-            childRoot->computePreferredLogicalWidths();
+        FrameView* childFrameView = static_cast<FrameView*>(widget());
         childFrameView->layout();
 
         // Laying out our kids is normally responsible for adjusting our height, so we set it here.

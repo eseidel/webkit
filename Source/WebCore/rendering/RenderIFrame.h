@@ -47,6 +47,7 @@ private:
     virtual LayoutUnit maxPreferredLogicalWidth() const OVERRIDE;
 
     virtual bool shouldComputeSizeAsReplaced() const OVERRIDE;
+    virtual bool isInlineBlockOrInlineTable() const OVERRIDE;
 
     virtual void layout() OVERRIDE;
 
