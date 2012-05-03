@@ -1,3 +1,32 @@
+2012-05-02  Eric Seidel  <eric@webkit.org>
+
+        WebKit should have an easy way to add/remove FEATURE_DEFINES for all ports
+        https://bugs.webkit.org/show_bug.cgi?id=85456
+
+        Reviewed by NOBODY (OOPS!).
+
+        Currently if you want to add an ENABLE_ macro to webkit, you need to edit at least
+        10 files, or more if you wish that ENABLE_ macro to be useable from within
+        our user agent stylesheets, or idl files.  This script will autogenerate 6 of those files
+        (4 for mac, 1 for AppleWin and 1 for WinCairo), and can easily be extended to autogenerate
+        the rest of them.
+        I'm not sure this is the perfect solution, but it sure seems better than what we have today!
+
+        * Scripts/webkitpy/tool/commands/__init__.py:
+        * Scripts/webkitpy/tool/commands/generatefeaturefiles.py: Added.
+        (FeatureFileGenerator):
+        (__init__):
+        (_all_defines):
+        (XCConfigGenerator):
+        (XCConfigGenerator._content_for_feature):
+        (XCConfigGenerator.generate):
+        (VSPropsGenerator):
+        (VSPropsGenerator._generate_header):
+        (_content_for_feature):
+        (generate_for_port):
+        (GenerateFeatureFiles):
+        (GenerateFeatureFiles.execute):
+
 2012-05-04  Raphael Kubo da Costa  <rakuco@webkit.org>
 
         webkitpy: Use os.pathsep instead of manually finding out the path separator in NRWT.
