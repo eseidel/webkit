@@ -29,6 +29,12 @@ Mac = "AppleMac"
 Win = "AppleWin"
 IOS = "AppleIOS"
 WinCairo = "WinCairo"
+BlackBerry = "BlackBerry"
+Efl = "Efl"
+
+# Used by Scripts/webkitpy/tool/commands/generatefeaturefiles.py when generating
+# the build-webkit options list where we must translate the feature defaults to perl.
+all_port_names = [Mac, Win, IOS, WinCairo, BlackBerry, Efl]
 
 
 class Feature(object):
@@ -65,7 +71,7 @@ features = [
     DisabledFeature("3D_CANVAS"),
     Feature("3D_RENDERING", exclude=WinCairo),
     DisabledFeature("ACCELERATED_2D_CANVAS"),
-    DisabledFeature("ANIMATION_API"),
+    DisabledFeature("ANIMATION_API", include=BlackBerry),
     Feature("BLOB", exclude=[Win, WinCairo]),
     Feature("CHANNEL_MESSAGING"),
     DisabledFeature("CSS_EXCLUSIONS"),
@@ -89,7 +95,7 @@ features = [
     Feature("ICONDATABASE", exclude=IOS),
     DisabledFeature("INDEXED_DATABASE"),
     DisabledFeature("INPUT_SPEECH"),
-    DisabledFeature("INPUT_TYPE_COLOR"),
+    DisabledFeature("INPUT_TYPE_COLOR", include=[BlackBerry, Efl]),
     DisabledFeature("INPUT_TYPE_DATE", include=IOS),
     DisabledFeature("INPUT_TYPE_DATETIME", include=IOS),
     DisabledFeature("INPUT_TYPE_DATETIMELOCAL", include=IOS),

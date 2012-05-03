@@ -25,7 +25,7 @@
 from webkitpy.tool.multicommandtool import AbstractDeclarativeCommand
 
 import imp
-
+import string
 
 class FeatureFileGenerator(object):
     _generated_warning = """This is a generated file. Do not edit.
@@ -113,6 +113,87 @@ class VSPropsGenerator(FeatureFileGenerator):
         return contents + self._footer
 
 
+class BuildWebKitOptionsGenerator(FeatureFileGenerator):
+    # Presumably we could make this header/footer be less verbose. :(
+    _header = ("\n".join(["# %s" % line for line in FeatureFileGenerator._generated_warning.split("\n")]) + "\n" +
+        '''use strict;
+use warnings;
+
+use FindBin;
+use lib $FindBin::Bin;
+use webkitdirs;
+
+BEGIN {
+   use Exporter   ();
+   our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
+   $VERSION     = 1.00;
+   @ISA         = qw(Exporter);
+   @EXPORT      = qw(&getFeatureOptionList);
+   %EXPORT_TAGS = ( );
+   @EXPORT_OK   = ();
+}''')
+
+    _footer = """
+sub getFeatureOptionList()
+{
+    return @features;
+}
+
+1;
+"""
+
+    def _value_name_for_feature(self, feature):
+        value_name = "".join(word.capitalize() for word in feature.name.split("_"))
+        if (value_name[:2] == "3d"):
+            value_name = "threeD" + value_name[2:]
+        return value_name[:1].lower() + value_name[1:] + "Support"
+
+    def _option_name_for_feature(self, feature):
+        return feature.name.lower().replace("_", "-")
+
+    def _option_text_for_feature(self, feature):
+        return "Toggle %s support" % " ".join(word.capitalize() for word in feature.name.split("_"))
+
+    def _perl_function_for_port_name(self, port_name):
+        return {
+            self.features_module.Mac: "isAppleMacWebkit()",
+            self.features_module.Win: "isAppleWinWebkit()",
+        }[port_name]
+
+    def _default_string_for_feature(self, feature):
+        # build-webkit doesn't know how to build IOS or WinCairo, so we don't care about those inclusions/exclusions.
+        ignored_port_names = set([self.features_module.IOS, self.features_module.WinCairo])
+        excluded_port_names = feature.excludes - ignored_port_names
+        included_port_names = feature.includes - ignored_port_names
+        if excluded_port_names or included_port_names:
+            # FIXME: This is the hard part. :)
+            if not excluded_port_names:
+                port_names_string = " || ".join([self._perl_function_for_port_name(port_name) for port_name in included_port_names])
+                if len(included_port_names) > 1:
+                    return "(%s)" % port_names_string
+                return port_names_string
+            return "ERROR"
+        return "1" if feature.default_enabled else "0"
+
+    def _options_dictionary_string_for_feature(self, feature):
+        option_name = self._option_name_for_feature(feature)
+        option_text = self._option_text_for_feature(feature)
+        define_name = feature.define_name()
+        default_string = self._default_string_for_feature(feature)
+        value_name = self._value_name_for_feature(feature)
+        return """    { option => "%s", desc => "%s",
+      define => "%s", default => %s, value => \$%s },""" % (option_name, option_text, define_name, default_string, value_name)
+
+    def generate(self):
+        contents = self._header
+        contents += "\n\nmy (\n"
+        contents += "\n".join(["    $%s," % self._value_name_for_feature(feature) for feature in self.features])
+        contents += "\n);\n\nmy @features = (\n"
+        contents += "\n\n".join([self._options_dictionary_string_for_feature(feature) for feature in self.features])
+        contents += "\n);\n";
+        return contents + self._footer
+
+
 class GenerateFeatureFiles(AbstractDeclarativeCommand):
     name = "generate-feature-files"
     help_text = "Command for generating per-port feature files from Source/Features"
@@ -135,10 +216,14 @@ class GenerateFeatureFiles(AbstractDeclarativeCommand):
             fs.write_text_file(feature_file_path, xcconfig_features)
 
         vsprops_generator = VSPropsGenerator(features_module)
-        vsprops_dir = fs.join(tool.scm().checkout_root, "WebKitLibraries", "win", "tools", "vsprops")
+        vsprops_dir = fs.join(checkout_root, "WebKitLibraries", "win", "tools", "vsprops")
 
         vsprops_features = vsprops_generator.generate_for_port(features_module.Win, "FeatureDefines")
         fs.write_text_file(fs.join(vsprops_dir, "FeatureDefines.vsprops"), vsprops_features)
 
         vsprops_features = vsprops_generator.generate_for_port(features_module.WinCairo, "FeatureDefinesCairo")
         fs.write_text_file(fs.join(vsprops_dir, "FeatureDefinesCairo.vsprops"), vsprops_features)
+
+        build_webkit_features = BuildWebKitOptionsGenerator(features_module).generate()
+        feature_file_path = fs.join(checkout_root, "Tools", "Scripts", "webkitperl", "FeatureList.pm")
+        fs.write_text_file(feature_file_path, build_webkit_features)
