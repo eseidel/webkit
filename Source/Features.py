@@ -31,6 +31,8 @@ IOS = "AppleIOS"
 WinCairo = "WinCairo"
 BlackBerry = "BlackBerry"
 Efl = "Efl"
+Gtk = "Gtk"
+
 
 # Used by Scripts/webkitpy/tool/commands/generatefeaturefiles.py when generating
 # the build-webkit options list where we must translate the feature defaults to perl.
@@ -68,14 +70,14 @@ class DisabledFeature(Feature):
 
 
 features = [
-    DisabledFeature("3D_CANVAS"),
     Feature("3D_RENDERING", exclude=WinCairo),
     DisabledFeature("ACCELERATED_2D_CANVAS"),
     DisabledFeature("ANIMATION_API", include=BlackBerry),
+    DisabledFeature("BATTERY_STATUS", include=[BlackBerry, Efl]),
     Feature("BLOB", exclude=[Win, WinCairo]),
     Feature("CHANNEL_MESSAGING"),
     DisabledFeature("CSS_EXCLUSIONS"),
-    Feature("CSS_FILTERS", exclude=WinCairo),
+    DisabledFeature("CSS_FILTERS", include=[Mac, Win]),
     DisabledFeature("CSS_SHADERS"),
     DisabledFeature("CSS_REGIONS"),
     Feature("CSS_GRID_LAYOUT", exclude=[Win, WinCairo]),
@@ -84,15 +86,17 @@ features = [
     DisabledFeature("DATAGRID"),
     DisabledFeature("DATA_TRANSFER_ITEMS"),
     Feature("DETAILS"),
-    DisabledFeature("DEVICE_ORIENTATION"),
+    DisabledFeature("DEVICE_ORIENTATION", include=BlackBerry),
     DisabledFeature("DIRECTORY_UPLOAD"),
-    DisabledFeature("FILE_SYSTEM"),
+    DisabledFeature("DOWNLOAD_ATTRIBUTE", include=BlackBerry),
+    DisabledFeature("FILE_SYSTEM", include=BlackBerry),
     Feature("FILTERS", exclude=IOS),
     Feature("FULLSCREEN_API", exclude=WinCairo),
     DisabledFeature("GAMEPAD"),
-    Feature("GEOLOCATION"),
+    Feature("GEOLOCATION", exclude=Efl),
     Feature("HIGH_DPI_CANVAS", exclude=WinCairo),
     Feature("ICONDATABASE", exclude=IOS),
+    Feature("INSPECTOR"),
     DisabledFeature("INDEXED_DATABASE"),
     DisabledFeature("INPUT_SPEECH"),
     DisabledFeature("INPUT_TYPE_COLOR", include=[BlackBerry, Efl]),
@@ -104,7 +108,7 @@ features = [
     DisabledFeature("INPUT_TYPE_WEEK", include=IOS),
     Feature("JAVASCRIPT_DEBUGGER"),
     Feature("LEGACY_CSS_VENDOR_PREFIXES", exclude=WinCairo),
-    DisabledFeature("LEGACY_NOTIFICATIONS", include=Mac, exclude=MacLion),
+    DisabledFeature("LEGACY_NOTIFICATIONS", include=[Mac, BlackBerry], exclude=MacLion),
     DisabledFeature("LINK_PREFETCH"),
     DisabledFeature("LINK_PRERENDER"),
     Feature("MATHML"),
@@ -121,7 +125,7 @@ features = [
     DisabledFeature("REGISTER_PROTOCOL_HANDLER"),
     Feature("REQUEST_ANIMATION_FRAME", exclude=WinCairo),
     DisabledFeature("SCRIPTED_SPEECH"),
-    DisabledFeature("SHADOW_DOM"),
+    DisabledFeature("SHADOW_DOM", include=Gtk),
     Feature("SHARED_WORKERS"),
     Feature("SQL_DATABASE"),
     DisabledFeature("STYLE_SCOPED"),
@@ -135,7 +139,7 @@ features = [
     Feature("WEBGL", exclude=[Win, WinCairo]),
     Feature("WEB_AUDIO", exclude=[Win, WinCairo]),
     Feature("WEB_SOCKETS"),
-    DisabledFeature("WEB_TIMING"),
+    DisabledFeature("WEB_TIMING", include=[BlackBerry, Gtk, Efl]),
     Feature("WORKERS"),
     Feature("XSLT"),
 ]
