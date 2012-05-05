@@ -28,9 +28,9 @@ import imp
 import string
 
 class FeatureFileGenerator(object):
-    _generated_warning = """This is a generated file. Do not edit.
+    _warning_lines = """This is a generated file. Do not edit.
 This file is generated from Source/Features.py using
-webkit-patch generate-feature-files"""
+webkit-patch generate-feature-files""".split("\n")
 
     def __init__(self, features_module):
         self.features_module = features_module
@@ -41,7 +41,7 @@ webkit-patch generate-feature-files"""
 
 
 class XCConfigGenerator(FeatureFileGenerator):
-    _header = "\n".join(["// %s" % line for line in FeatureFileGenerator._generated_warning.split("\n")]) + "\n"
+    _header = "\n".join(["// %s" % line for line in FeatureFileGenerator._warning_lines]) + "\n"
 
     def _content_for_feature(self, feature):
         define_name = feature.define_name()
@@ -80,7 +80,7 @@ class VSPropsGenerator(FeatureFileGenerator):
 
     def _generate_header(self, file_name):
         header = '<?xml version="1.0" encoding="utf-8"?>\n'
-        header += "\n".join(["<!-- %s -->" % line for line in FeatureFileGenerator._generated_warning.split("\n")]) + "\n"
+        header += "\n".join(["<!-- %s -->" % line for line in FeatureFileGenerator._warning_lines]) + "\n"
         header += """<VisualStudioPropertySheet
 \tProjectType="Visual C++"
 \tVersion="8.00"
@@ -115,7 +115,7 @@ class VSPropsGenerator(FeatureFileGenerator):
 
 class BuildWebKitOptionsGenerator(FeatureFileGenerator):
     # Presumably we could make this header/footer be less verbose. :(
-    _header = ("\n".join(["# %s" % line for line in FeatureFileGenerator._generated_warning.split("\n")]) + "\n" +
+    _header = ("\n".join(["# %s" % line for line in FeatureFileGenerator._warning_lines]) + "\n" +
         '''use strict;
 use warnings;
 
@@ -184,6 +184,7 @@ sub getFeatureOptionList()
             self.features_module.BlackBerry: "isBlackBerry()",
             self.features_module.Efl: "isEfl()",
             self.features_module.Gtk: "isGtk()",
+            self.features_module.Qt: "isQt()",
         }[port_name]
 
     def _default_string_for_feature(self, feature):
@@ -225,14 +226,26 @@ sub getFeatureOptionList()
         return contents + self._footer
 
 
+class QMakePRIGenerator(FeatureFileGenerator):
+    _header = "\n".join(["# %s" % line for line in FeatureFileGenerator._warning_lines]) + "\n"
+
+    def generate_for_port(self, port_name):
+        contents = self._header
+        contents += "FEATURE_DEFAULTS = \\\n"
+        for feature in self.features:
+            define_string = feature.define_name() + "=" + ("1" if feature.is_enabled(port_name) else "0")
+            contents += "    %s \\\n" % define_string
+        return contents + "\n"
+
+
 class GenerateFeatureFiles(AbstractDeclarativeCommand):
     name = "generate-feature-files"
     help_text = "Command for generating per-port feature files from Source/Features"
 
     def execute(self, options, args, tool):
         fs = tool.filesystem
-        checkout_root = tool.scm().checkout_root
-        features_list_path = fs.join(checkout_root, "Source", "Features.py")
+        webkit_root = tool.scm().checkout_root
+        features_list_path = fs.join(webkit_root, "Source", "Features.py")
         features_module = imp.load_source('features', features_list_path)
 
         xcconfig_projects = [
@@ -243,11 +256,11 @@ class GenerateFeatureFiles(AbstractDeclarativeCommand):
         ]
         xcconfig_features = XCConfigGenerator(features_module).generate()
         for project_name in xcconfig_projects:
-            feature_file_path = fs.join(checkout_root, "Source", project_name, "Configurations", "FeatureDefines.xcconfig")
+            feature_file_path = fs.join(webkit_root, "Source", project_name, "Configurations", "FeatureDefines.xcconfig")
             fs.write_text_file(feature_file_path, xcconfig_features)
 
         vsprops_generator = VSPropsGenerator(features_module)
-        vsprops_dir = fs.join(checkout_root, "WebKitLibraries", "win", "tools", "vsprops")
+        vsprops_dir = fs.join(webkit_root, "WebKitLibraries", "win", "tools", "vsprops")
 
         vsprops_features = vsprops_generator.generate_for_port(features_module.Win, "FeatureDefines")
         fs.write_text_file(fs.join(vsprops_dir, "FeatureDefines.vsprops"), vsprops_features)
@@ -256,5 +269,8 @@ class GenerateFeatureFiles(AbstractDeclarativeCommand):
         fs.write_text_file(fs.join(vsprops_dir, "FeatureDefinesCairo.vsprops"), vsprops_features)
 
         build_webkit_features = BuildWebKitOptionsGenerator(features_module).generate()
-        feature_file_path = fs.join(checkout_root, "Tools", "Scripts", "webkitperl", "FeatureList.pm")
-        fs.write_text_file(feature_file_path, build_webkit_features)
+        fs.write_text_file(fs.join(webkit_root, "Tools", "Scripts", "webkitperl", "FeatureList.pm"), build_webkit_features)
+
+        qmake_pri_features = QMakePRIGenerator(features_module).generate_for_port(features_module.Qt)
+        fs.write_text_file(fs.join(webkit_root, "Tools", "qmake", "mkspecs", "features", "features.pri"), qmake_pri_features)
+
