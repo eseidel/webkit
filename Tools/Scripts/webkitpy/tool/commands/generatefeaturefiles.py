@@ -165,12 +165,15 @@ sub getFeatureOptionList()
             ["Css", "CSS"],
             ["Dom", "DOM"],
             ["Dpi", "DPI"],
+            ["Ftpdir", "FTP Directory"], # We should change the name of the define.
+            ["Icondatabase", "Icon Database"], # We should change the name of the define.
             ["Javascript", "JavaScript"],
             ["Mathml", "MathML"],
             ["Mhtml", "MHTML"],
             ["Objc", "ObjC"],
             ["Sql", "SQL"],
             ["Svg", "SVG"],
+            ["Webkit", "WebKit"],
             ["Xslt", "XSLT"],
         ]
         for replacement in replacements:
