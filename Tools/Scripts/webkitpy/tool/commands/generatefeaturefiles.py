@@ -48,14 +48,14 @@ class XCConfigGenerator(FeatureFileGenerator):
         on_mac = feature.is_enabled(self.features_module.Mac)
         on_ios = feature.is_enabled(self.features_module.IOS)
 
-        if on_mac == on_ios and self.features_module.MacLion not in feature.excludes:
+        if on_mac == on_ios and self.features_module.MacLion not in feature.disable:
             return "%s = %s;\n" % (define_name, define_name if on_mac else "")
 
         content = "%s = $(%s_$(REAL_PLATFORM_NAME));\n" % (define_name, define_name)
         if on_mac:
             # NOTE: This code is not general-purpose for version specification
             # this is just enough to make ENABLE_NOTIFICATION be disabled on Lion.
-            if self.features_module.MacLion in feature.excludes:
+            if self.features_module.MacLion in feature.disable:
                 content += "%s_macosx = $(%s_macosx_$(TARGET_MAC_OS_X_VERSION_MAJOR));\n" % (define_name, define_name)
                 content += "%s_macosx_1070 = ;\n" % (define_name)
                 content += "%s_macosx_1080 = %s;\n" % (define_name, define_name)
@@ -190,8 +190,8 @@ sub getFeatureOptionList()
     def _default_string_for_feature(self, feature):
         # build-webkit doesn't know how to build IOS or WinCairo, so we don't care about those inclusions/exclusions.
         ignored_port_names = set([self.features_module.IOS, self.features_module.WinCairo])
-        excluded_port_names = sorted(feature.excludes - ignored_port_names)
-        included_port_names = sorted(feature.includes - ignored_port_names)
+        excluded_port_names = sorted(feature.disable - ignored_port_names)
+        included_port_names = sorted(feature.enable - ignored_port_names)
         if excluded_port_names or included_port_names:
             # FIXME: This is the hard part. :)
             if not excluded_port_names:
@@ -205,7 +205,7 @@ sub getFeatureOptionList()
                     return "(%s)" % port_names_string
                 return port_names_string
             return "ERROR"
-        return "1" if feature.default_enabled else "0"
+        return "1" if feature.default else "0"
 
     def _options_dictionary_string_for_feature(self, feature):
         option_name = self._option_name_for_feature(feature)

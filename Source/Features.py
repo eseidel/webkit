@@ -35,112 +35,129 @@ Gtk = "Gtk"
 Qt = "Qt"
 
 
-# Used by Scripts/webkitpy/tool/commands/generatefeaturefiles.py when generating
-# the build-webkit options list where we must translate the feature defaults to perl.
-all_port_names = [Mac, Win, IOS, WinCairo, BlackBerry, Efl]
-
-
 class Feature(object):
-    default_enabled = True
-
     def _to_set(self, value):
         value = value or []
         if type(value) is not list:
             value = [value]
         return set(value)
 
-    def __init__(self, name, exclude=None, include=None):
+    def __init__(self, name, default=True, enable=None, disable=None):
         self.name = name
-        self.excludes = self._to_set(exclude)
-        self.includes = self._to_set(include)
+        self.enable = self._to_set(enable)
+        self.disable = self._to_set(disable)
+        self.default = default
 
     def define_name(self):
         return "ENABLE_" + self.name
 
     def is_enabled(self, port_name):
-        if port_name in self.excludes:
+        if port_name in self.disable:
             return False
-        if port_name in self.includes:
+        if port_name in self.enable:
             return True
-        return self.default_enabled
+        return self.default
 
 
-# Disabled features use a white-list approach, instead of a blacklist.
-class DisabledFeature(Feature):
-    default_enabled = False
-
+# This list is meant to be a global list of default enable/disable values
+# for features, across all ports of WebKit.
+#
+# The "default" key, specifies how to treat the feature on ports which are not
+# explicitly listed.
+#
+# The Feature() syntax supports both white-list (enable=) and blacklist (disable=).
+# A single Feature line can include both, but normally default=True features
+# use blacklists, and default=False features use whitelists.
+#
+# The enable= and disable= processing is smart enough to handle either single values
+# e.g. enable=Mac, or lists enable=[Mac, Win].
+#
+# Normally if you're adding a feature, you should start with default=False and
+# an explicit white-list of ports which want to support that feature:
+# Feature("MY_FEATURE", default=False)
+#
+# Once a Feature is widly supported, "default" should change to True, and a
+# blacklist used for brevity.
 
 features = [
-    Feature("3D_RENDERING", exclude=WinCairo),
-    DisabledFeature("ACCELERATED_2D_CANVAS"),
-    DisabledFeature("ANIMATION_API", include=BlackBerry),
-    DisabledFeature("BATTERY_STATUS", include=[BlackBerry, Efl]),
-    Feature("BLOB", exclude=[Win, WinCairo]),
+    Feature("3D_RENDERING", disable=WinCairo),
+    Feature("ACCELERATED_2D_CANVAS", default=False),
+    Feature("ANIMATION_API", default=False, enable=BlackBerry),
+    Feature("BATTERY_STATUS", default=False, enable=[BlackBerry, Efl]),
+    Feature("BLOB", disable=[Win, WinCairo]),
     Feature("CHANNEL_MESSAGING"),
-    DisabledFeature("CSS_EXCLUSIONS"),
-    DisabledFeature("CSS_FILTERS", include=[Mac, Win, Qt, IOS]),
-    DisabledFeature("CSS_SHADERS"),
-    DisabledFeature("CSS_REGIONS"),
-    Feature("CSS_GRID_LAYOUT", exclude=[Win, WinCairo]),
-    DisabledFeature("DASHBOARD_SUPPORT", include=Mac),
-    DisabledFeature("DATALIST", include=[WinCairo, Qt]),
-    DisabledFeature("DATAGRID"),
-    DisabledFeature("DATA_TRANSFER_ITEMS"),
+    Feature("CSS_EXCLUSIONS", default=False),
+    Feature("CSS_FILTERS", default=False, enable=[Mac, Win, Qt, IOS]),
+    Feature("CSS_GRID_LAYOUT", disable=[Win, WinCairo, Qt]),
+    Feature("CSS_REGIONS", default=False),
+    Feature("CSS_SHADERS", default=False),
+    Feature("DASHBOARD_SUPPORT", default=False, enable=Mac),
+    Feature("DATA_TRANSFER_ITEMS", default=False),
+    Feature("DATAGRID", default=False),
+    Feature("DATALIST", default=False, enable=[WinCairo, Qt]),
     Feature("DETAILS"),
-    DisabledFeature("DEVICE_ORIENTATION", include=BlackBerry),
-    DisabledFeature("DIRECTORY_UPLOAD"),
-    DisabledFeature("DOWNLOAD_ATTRIBUTE", include=BlackBerry),
-    DisabledFeature("FILE_SYSTEM", include=BlackBerry),
-    Feature("FILTERS", exclude=IOS),
-    Feature("FULLSCREEN_API", exclude=[WinCairo, Qt]),
-    DisabledFeature("GAMEPAD"),
-    Feature("GEOLOCATION", exclude=[Efl, Qt]),
-    Feature("HIGH_DPI_CANVAS", exclude=WinCairo),
-    Feature("ICONDATABASE", exclude=IOS),
+    Feature("DEVICE_ORIENTATION", default=False, enable=BlackBerry),
+    Feature("DIRECTORY_UPLOAD", default=False),
+    Feature("DOWNLOAD_ATTRIBUTE", default=False, enable=BlackBerry),
+    Feature("FAST_MOBILE_SCROLLING", default=False, enable=Qt),
+    Feature("FILE_SYSTEM", default=False, enable=BlackBerry),
+    Feature("FILTERS", disable=IOS),
+    Feature("FTPDIR"),
+    Feature("FULLSCREEN_API", disable=[WinCairo, Qt]),
+    Feature("GAMEPAD", default=False),
+    Feature("GEOLOCATION", disable=[Efl, Qt]),
+    Feature("GESTURE_EVENTS", default=False, enable=Qt),
+    Feature("HIGH_DPI_CANVAS", default=False, enable=[Mac, Win, IOS]),
+    Feature("ICONDATABASE", disable=IOS),
+    Feature("INDEXED_DATABASE", default=False),
+    Feature("INPUT_SPEECH", default=False),
+    Feature("INPUT_TYPE_COLOR", default=False, enable=[BlackBerry, Efl]),
+    Feature("INPUT_TYPE_DATE", default=False, enable=IOS),
+    Feature("INPUT_TYPE_DATETIME", default=False, enable=IOS),
+    Feature("INPUT_TYPE_DATETIMELOCAL", default=False, enable=IOS),
+    Feature("INPUT_TYPE_MONTH", default=False, enable=IOS),
+    Feature("INPUT_TYPE_TIME", default=False, enable=IOS),
+    Feature("INPUT_TYPE_WEEK", default=False, enable=IOS),
     Feature("INSPECTOR"),
-    DisabledFeature("INDEXED_DATABASE"),
-    DisabledFeature("INPUT_SPEECH"),
-    DisabledFeature("INPUT_TYPE_COLOR", include=[BlackBerry, Efl]),
-    DisabledFeature("INPUT_TYPE_DATE", include=IOS),
-    DisabledFeature("INPUT_TYPE_DATETIME", include=IOS),
-    DisabledFeature("INPUT_TYPE_DATETIMELOCAL", include=IOS),
-    DisabledFeature("INPUT_TYPE_MONTH", include=IOS),
-    DisabledFeature("INPUT_TYPE_TIME", include=IOS),
-    DisabledFeature("INPUT_TYPE_WEEK", include=IOS),
     Feature("JAVASCRIPT_DEBUGGER"),
-    Feature("LEGACY_CSS_VENDOR_PREFIXES", exclude=WinCairo),
-    DisabledFeature("LEGACY_NOTIFICATIONS", include=[Mac, BlackBerry, Qt], exclude=MacLion),
-    DisabledFeature("LINK_PREFETCH"),
-    DisabledFeature("LINK_PRERENDER"),
-    DisabledFeature("MATHML", include=[Mac, Win, IOS]),
-    DisabledFeature("MEDIA_SOURCE", include=Win),
-    DisabledFeature("MEDIA_STATISTICS", include=Win),
+    Feature("LEGACY_CSS_VENDOR_PREFIXES", default=False, enable=[Mac, Win, IOS]),
+    Feature("LEGACY_NOTIFICATIONS", default=False, enable=[Mac, BlackBerry, Qt], disable=MacLion),
+    Feature("LEGACY_WEBKIT_BLOB_BUILDER", default=False, enable=Qt),
+    Feature("LINK_PREFETCH", default=False),
+    Feature("LINK_PRERENDER", default=False),
+    Feature("MATHML", default=False, enable=[Mac, Win, IOS]),
+    Feature("MEDIA_SOURCE", default=False, enable=Win),
+    Feature("MEDIA_STATISTICS", default=False, enable=Win),
+    Feature("MEDIA_STREAM", default=False),
     Feature("METER_TAG"),
-    DisabledFeature("MHTML"),
-    DisabledFeature("MICRODATA"),
-    Feature("MUTATION_OBSERVERS"),
-    DisabledFeature("NOTIFICATIONS", include=[Mac, Qt], exclude=MacLion),
-    DisabledFeature("PAGE_VISIBILITY_API", include=Qt),
-    Feature("PROGRESS_TAG", exclude=[Win, WinCairo]),
-    DisabledFeature("QUOTA"),
-    DisabledFeature("REGISTER_PROTOCOL_HANDLER"),
-    Feature("REQUEST_ANIMATION_FRAME", exclude=WinCairo),
-    DisabledFeature("SCRIPTED_SPEECH"),
-    DisabledFeature("SHADOW_DOM", include=Gtk),
+    Feature("MHTML", default=False),
+    Feature("MICRODATA", default=False),
+    Feature("MUTATION_OBSERVERS", disable=Qt),
+    Feature("NETSCAPE_PLUGIN_API", disable=[Qt, IOS]),
+    Feature("NOTIFICATIONS", default=False, enable=[Mac, Qt], disable=MacLion),
+    Feature("PAGE_VISIBILITY_API", default=False, enable=Qt),
+    Feature("PROGRESS_TAG", disable=[Win, WinCairo]),
+    Feature("QUOTA", default=False),
+    Feature("REGISTER_PROTOCOL_HANDLER", default=False),
+    Feature("REQUEST_ANIMATION_FRAME", disable=WinCairo),
+    Feature("SCRIPTED_SPEECH", default=False),
+    Feature("SHADOW_DOM", default=False, enable=Gtk),
     Feature("SHARED_WORKERS"),
     Feature("SQL_DATABASE"),
-    DisabledFeature("STYLE_SCOPED"),
+    Feature("STYLE_SCOPED", default=False),
     Feature("SVG"),
-    DisabledFeature("SVG_DOM_OBJC_BINDINGS", include=Mac),
-    Feature("SVG_FONTS", exclude=Qt),
-    Feature("TEXT_NOTIFICATIONS_ONLY", exclude=[Win, WinCairo]),
-    DisabledFeature("TOUCH_ICON_LOADING"),
-    Feature("VIDEO", exclude=[WinCairo, Qt]),
-    DisabledFeature("VIDEO_TRACK", include=Mac),
-    Feature("WEBGL", exclude=[Win, WinCairo, Qt]),
-    Feature("WEB_AUDIO", exclude=[Win, WinCairo, Qt]),
+    Feature("SVG_DOM_OBJC_BINDINGS", default=False, enable=Mac),
+    Feature("SVG_FONTS", disable=Qt),
+    Feature("TEXT_NOTIFICATIONS_ONLY", default=False, enable=[Mac, IOS]), # IOS likely doesn't want this.
+    Feature("TOUCH_ADJUSTMENT", default=False, enable=Qt),
+    Feature("TOUCH_EVENTS", default=False, enable=Qt),
+    Feature("TOUCH_ICON_LOADING", default=False),
+    Feature("VIDEO", disable=[WinCairo, Qt]),
+    Feature("VIDEO_TRACK", default=False, enable=Mac),
+    Feature("WEB_AUDIO", disable=[Win, WinCairo, Qt]),
     Feature("WEB_SOCKETS"),
-    DisabledFeature("WEB_TIMING", include=[BlackBerry, Gtk, Efl, Qt]),
+    Feature("WEB_TIMING", default=False, enable=[BlackBerry, Gtk, Efl, Qt]),
+    Feature("WEBGL", disable=[Win, WinCairo, Qt]),
     Feature("WORKERS"),
-    Feature("XSLT", exclude=Qt),
+    Feature("XSLT", disable=Qt),
 ]
