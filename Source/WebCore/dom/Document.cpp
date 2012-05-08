@@ -1658,8 +1658,12 @@ void Document::scheduleForcedStyleRecalc()
 
 void Document::scheduleStyleRecalc()
 {
-    // FIXME: In the seamless case, we should likely schedule a style recalc
-    // on our parent and instead return early here.
+    if (shouldDisplaySeamlesslyWithParent()) {
+        // When we're seamless, our parent document manages our style recalcs.
+        ownerElement()->setNeedsStyleRecalc();
+        ownerElement()->document()->scheduleStyleRecalc();
+        return;
+    }
 
     if (m_styleRecalcTimer.isActive() || inPageCache())
         return;
@@ -1715,8 +1719,12 @@ void Document::recalcStyle(StyleChange change)
     if (m_inStyleRecalc)
         return; // Guard against re-entrancy. -dwh
 
-    // FIXME: In the seamless case, we may wish to exit early in the child after recalcing our parent chain.
-    // I have not yet found a test which requires such.
+    // Make sure our ancestor chain is up-to-date before we resolve style
+    // on ourselves (in case our owning iframe is now display: none for instance).
+    if (Document* parentDoc = parentDocument())
+        parentDoc->recalcStyle(NoChange);
+
+    // FIXME: In the seamless case, our parent should have recalc'd our style, so we could return early here.
 
     if (m_hasDirtyStyleResolver)
         updateActiveStylesheets(RecalcStyleImmediately);

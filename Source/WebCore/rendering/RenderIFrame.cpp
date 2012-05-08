@@ -56,13 +56,17 @@ void RenderIFrame::computeLogicalHeight()
         FrameView* view = static_cast<FrameView*>(widget());
         if (!view)
             return;
-        int border = borderTop() + borderBottom();
+        LayoutUnit border = borderTop() + borderBottom();
         setHeight(max<LayoutUnit>(height(), view->contentsHeight() + border));
     }
 }
 
 void RenderIFrame::computeLogicalWidth()
 {
+    // When we're seamless, we behave like a block.  Thankfully RenderBox has all the right logic for this.
+    if (isSeamless())
+        return RenderBox::computeLogicalWidth();
+
     RenderPart::computeLogicalWidth();
     if (!flattenFrame())
         return;
@@ -79,13 +83,63 @@ void RenderIFrame::computeLogicalWidth()
     }
 }
 
-bool RenderIFrame::flattenFrame()
+bool RenderIFrame::shouldComputeSizeAsReplaced() const
+{
+    // When we're seamless, we use normal block/box sizing code except when inline.
+    return !isSeamless();
+}
+
+bool RenderIFrame::isInlineBlockOrInlineTable() const
+{
+    return isSeamless() && isInline();
+}
+
+LayoutUnit RenderIFrame::minPreferredLogicalWidth() const
+{
+    if (!isSeamless())
+        return RenderFrameBase::minPreferredLogicalWidth();
+
+    RenderView* childRoot = contentRootRenderer();
+    if (!childRoot)
+        return 0;
+
+    return childRoot->minPreferredLogicalWidth();
+}
+
+LayoutUnit RenderIFrame::maxPreferredLogicalWidth() const
+{
+    if (!isSeamless())
+        return RenderFrameBase::maxPreferredLogicalWidth();
+
+    RenderView* childRoot = contentRootRenderer();
+    if (!childRoot)
+        return 0;
+
+    return childRoot->maxPreferredLogicalWidth();
+}
+
+bool RenderIFrame::isSeamless() const
+{
+    return node() && node()->hasTagName(iframeTag) && static_cast<HTMLIFrameElement*>(node())->shouldDisplaySeamlessly();
+}
+
+RenderView* RenderIFrame::contentRootRenderer() const
+{
+    // FIXME: Is this always a valid cast?  What about plugins?
+    FrameView* childFrameView = static_cast<FrameView*>(widget());
+    return childFrameView ? static_cast<RenderView*>(childFrameView->frame()->contentRenderer()) : 0;
+}
+
+bool RenderIFrame::flattenFrame() const
 {
     if (!node() || !node()->hasTagName(iframeTag))
         return false;
 
     HTMLIFrameElement* element = static_cast<HTMLIFrameElement*>(node());
     Frame* frame = element->document()->frame();
+
+    if (isSeamless())
+        return false; // Seamless iframes are already "flat", don't try to flatten them.
 
     bool enabled = frame && frame->settings() && frame->settings()->frameFlatteningEnabled();
 
@@ -109,15 +163,50 @@ void RenderIFrame::layout()
 {
     ASSERT(needsLayout());
 
-    RenderPart::computeLogicalWidth();
-    RenderPart::computeLogicalHeight();
-
     if (flattenFrame()) {
+        RenderPart::computeLogicalWidth();
+        RenderPart::computeLogicalHeight();
         layoutWithFlattening(style()->width().isFixed(), style()->height().isFixed());
+        // FIXME: Is early return really OK here? What about transform/overflow code below?
         return;
     }
 
-    RenderPart::layout();
+    computeLogicalWidth();
+    // The 3 main phases of layout are: 1. Compute width, 2. Layout kids, 3. Compute height.
+    // For Seamless iframes, our "kids" are the subframe, so we layout the subframe synchronously here.
+    if (isSeamless()) {
+        // Normally we would set our height to 0 before laying out our kids.
+        // However RenderView (the root of the child document's rendering tree)
+        // assumes its container is of a fixed size, not dynamically grown to it.
+        // So we set our height to min(max-height, UINT_MAX) to avoid generating unecessary
+        // vertical scrollbars then we'll shrink the height after child layout.
+        LayoutUnit maxHeight = MAX_LAYOUT_UNIT;
+        if (!style()->logicalMaxHeight().isUndefined())
+            maxHeight = std::min<LayoutUnit>(maxHeight, style()->logicalMaxHeight().value());
+        setLogicalHeight(maxHeight);
+        updateWidgetPosition(); // Tell the Widget about our new Width/Height.
+
+        FrameView* childFrameView = static_cast<FrameView*>(widget());
+        childFrameView->layout();
+
+        // Laying out our kids is normally responsible for adjusting our height, so we set it here.
+        // Replaced elements do not respect padding, so we just add border to the child's height.
+        setLogicalHeight(childFrameView->contentsHeight() + borderTop() + borderBottom());
+    }
+
+    // Once our kids have determined our height we actually apply min/max to our height.
+    computeLogicalHeight();
+
+    if (isSeamless()) {
+        updateWidgetPosition(); // Notify the Widget of our final height.
+
+        FrameView* childFrameView = static_cast<FrameView*>(widget());
+        RenderView* childRoot = childFrameView ? static_cast<RenderView*>(childFrameView->frame()->contentRenderer()) : 0;
+
+        ASSERT(!childFrameView->layoutPending());
+        ASSERT(!childRoot->needsLayout());
+        ASSERT(!childRoot->firstChild() || !childRoot->firstChild()->firstChild() || !childRoot->firstChild()->firstChild()->needsLayout());
+    }
 
     m_overflow.clear();
     addVisualEffectOverflow();

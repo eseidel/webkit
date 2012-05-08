@@ -30,6 +30,7 @@ module html {
         attribute [Reflect] DOMString name;
         attribute [Reflect] DOMString sandbox;
         attribute [Reflect] DOMString scrolling;
+        attribute [Reflect] boolean seamless;
         attribute [Reflect, URL] DOMString src;
         attribute [Reflect] DOMString srcdoc;
         attribute [Reflect] DOMString width;
