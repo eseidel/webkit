@@ -144,6 +144,8 @@ void RenderEmbeddedObject::setUnavailablePluginIndicatorIsPressed(bool pressed)
 
 void RenderEmbeddedObject::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true); // This is likely redundant with RenderReplaced::paint or RenderPart::paint calls below.
+
     Page* page = 0;
     if (Frame* frame = this->frame())
         page = frame->page();

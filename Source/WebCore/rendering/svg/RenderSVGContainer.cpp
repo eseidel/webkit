@@ -108,6 +108,7 @@ bool RenderSVGContainer::selfWillPaint()
 
 void RenderSVGContainer::paint(PaintInfo& paintInfo, const LayoutPoint&)
 {
+    setEverDidPaint(true);
     if (paintInfo.context->paintingDisabled())
         return;
 
@@ -137,8 +138,10 @@ void RenderSVGContainer::paint(PaintInfo& paintInfo, const LayoutPoint&)
 
         if (continueRendering) {
             childPaintInfo.updatePaintingRootForChildren(this);
-            for (RenderObject* child = firstChild(); child; child = child->nextSibling())
+            for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
                 child->paint(childPaintInfo, IntPoint());
+                ASSERT(child->everDidPaint());
+            }
         }
     }
     

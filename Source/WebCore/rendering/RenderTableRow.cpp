@@ -217,6 +217,11 @@ bool RenderTableRow::nodeAtPoint(const HitTestRequest& request, HitTestResult& r
 
 void RenderTableRow::paintOutlineForRowIfNeeded(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    // Normally we only call setEverDidPaint(true) in ::paint(), but table-painting is special
+    // and row->paint() is only ever called if we have a selfPaintingLayer, normally we just paint outlines
+    // which should count as a paint.
+    setEverDidPaint(true);
+
     LayoutPoint adjustedPaintOffset = paintOffset + location();
     PaintPhase paintPhase = paintInfo.phase;
     if ((paintPhase == PaintPhaseOutline || paintPhase == PaintPhaseSelfOutline) && style()->visibility() == VISIBLE)
@@ -226,6 +231,7 @@ void RenderTableRow::paintOutlineForRowIfNeeded(PaintInfo& paintInfo, const Layo
 void RenderTableRow::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
     ASSERT(hasSelfPaintingLayer());
+    setEverDidPaint(true);
 
     paintOutlineForRowIfNeeded(paintInfo, paintOffset);
     for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
@@ -235,8 +241,10 @@ void RenderTableRow::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
                 RenderTableCell* cell = toRenderTableCell(child);
                 cell->paintBackgroundsBehindCell(paintInfo, paintOffset, this);
             }
-            if (!toRenderBox(child)->hasSelfPaintingLayer())
+            if (!toRenderBox(child)->hasSelfPaintingLayer()) {
                 child->paint(paintInfo, paintOffset);
+                ASSERT(child->everDidPaint());
+            }
         }
     }
 }

@@ -41,6 +41,7 @@ void RenderSVGHiddenContainer::layout()
 
 void RenderSVGHiddenContainer::paint(PaintInfo&, const LayoutPoint&)
 {
+    setEverDidPaint(true);
     // This subtree does not paint.
 }
 

@@ -293,7 +293,7 @@ void RenderTable::layoutCaption(RenderTableCaption* caption)
     // Apply the margins to the location now that they are definitely available from layout
     caption->setLogicalLocation(LayoutPoint(caption->marginStart(), caption->marginBefore() + logicalHeight()));
 
-    if (!selfNeedsLayout() && caption->checkForRepaintDuringLayout())
+    if (!selfNeedsLayout())
         caption->repaintDuringLayoutIfMoved(captionRect);
 
     setLogicalHeight(logicalHeight() + caption->logicalHeight() + caption->marginBefore() + caption->marginAfter());
@@ -533,6 +533,8 @@ void RenderTable::setCellLogicalWidths()
 
 void RenderTable::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
+
     LayoutPoint adjustedPaintOffset = paintOffset + location();
 
     PaintPhase paintPhase = paintInfo.phase;

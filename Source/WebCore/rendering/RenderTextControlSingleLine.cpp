@@ -93,6 +93,7 @@ RenderStyle* RenderTextControlSingleLine::textBaseStyle() const
 void RenderTextControlSingleLine::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
     RenderTextControl::paint(paintInfo, paintOffset);
+    ASSERT(everDidPaint());
 
     if (paintInfo.phase == PaintPhaseBlockBackground && m_shouldDrawCapsLockIndicator) {
         LayoutRect contentsRect = contentBoxRect();

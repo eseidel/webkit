@@ -1,3 +1,41 @@
+2012-07-31  Eric Seidel  <eric@webkit.org>
+
+        page is repainting more than it should when adding a new (offscreen) table element
+        https://bugs.webkit.org/show_bug.cgi?id=92800
+
+        Reviewed by NOBODY (OOPS!).
+
+        Additional information of the change such as approach, rationale. Please add per-function descriptions below (OOPS!).
+
+        No new tests (OOPS!).
+
+        * rendering/RenderBlock.cpp:
+        (WebCore::RenderBlock::paint):
+        * rendering/RenderBox.cpp:
+        (WebCore::RenderBox::paint):
+        * rendering/RenderDetailsMarker.cpp:
+        (WebCore::RenderDetailsMarker::paint):
+        * rendering/RenderEmbeddedObject.cpp:
+        (WebCore::RenderEmbeddedObject::paint):
+        * rendering/RenderFrameSet.cpp:
+        (WebCore::RenderFrameSet::paint):
+        * rendering/RenderImage.cpp:
+        (WebCore::RenderImage::paint):
+        * rendering/RenderInline.cpp:
+        (WebCore::RenderInline::paint):
+        * rendering/RenderObject.cpp:
+        (WebCore::RenderObject::checkForRepaintDuringLayout):
+        * rendering/RenderObject.h:
+        (WebCore::RenderObject::everDidPaint):
+        (WebCore::RenderObject::setEverDidPaint):
+        (RenderObject):
+        (WebCore::RenderObject::RenderObjectBitfields::RenderObjectBitfields):
+        (RenderObjectBitfields):
+        * rendering/RenderReplaced.cpp:
+        (WebCore::RenderReplaced::paint):
+        * rendering/RenderTable.cpp:
+        (WebCore::RenderTable::paint):
+
 2012-08-14  Jer Noble  <jer.noble@apple.com>
 
         Fullscreen/normal volume sliders don't stay in sync

@@ -530,6 +530,7 @@ void RenderInline::addChildToContinuation(RenderObject* newChild, RenderObject* 
 
 void RenderInline::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
     m_lineBoxes.paint(this, paintInfo, paintOffset);
 }
 

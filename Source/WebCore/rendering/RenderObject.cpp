@@ -1214,6 +1214,11 @@ LayoutRect RenderObject::paintingRootRect(LayoutRect& topLevelRect)
 
 void RenderObject::paint(PaintInfo&, const LayoutPoint&)
 {
+    // Subclasses are responsible for calling setEverDidPaint(true)
+    // otherwise container classes like RenderBox::paint() will ASSERT in Debug mode.
+    // However if you're not implementing paint(), we shouldn't be calling
+    // paint on you, so this baseclass does NOT call setEverDidPaint(true)
+    // which is nearly equivalent to calling ASSERT_NEVER_REACHED().
 }
 
 RenderBoxModelObject* RenderObject::containerForRepaint() const
@@ -1445,6 +1450,9 @@ bool RenderObject::repaintAfterLayoutIfNeeded(RenderBoxModelObject* repaintConta
 
 void RenderObject::repaintDuringLayoutIfMoved(const LayoutRect&)
 {
+    // Implementors of this function should repaint both the old and new bounds
+    // checking checkForRepaintDuringLayout() before invalidating the old bounds
+    // and checkForFirstPaintDuringLayout() before invalidating the new bounds.
 }
 
 void RenderObject::repaintOverhangingFloats(bool)
@@ -1453,6 +1461,15 @@ void RenderObject::repaintOverhangingFloats(bool)
 
 bool RenderObject::checkForRepaintDuringLayout() const
 {
+    // We only need to repaint (invalidate old bounds) if we've ever painted there.
+    return !document()->view()->needsFullRepaint() && !hasLayer() && everDidPaint();
+}
+
+bool RenderObject::checkForFirstPaintDuringLayout() const
+{
+    // This is a less-restrictive check than checkForRepaintDuringLayout(),
+    // and passing this means we should be invalidating new bounds during layout.
+    // We only ever paint objects which have completed a layout, layers and full-repaints are handled elsewhere.
     return !document()->view()->needsFullRepaint() && !hasLayer() && everHadLayout();
 }
 

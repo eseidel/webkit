@@ -246,6 +246,7 @@ void RenderWidget::notifyWidget(WidgetNotification notification)
 
 void RenderWidget::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
     if (!shouldPaint(paintInfo, paintOffset))
         return;
 

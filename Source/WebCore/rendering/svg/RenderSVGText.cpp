@@ -489,6 +489,7 @@ void RenderSVGText::absoluteQuads(Vector<FloatQuad>& quads, bool* wasFixed) cons
 
 void RenderSVGText::paint(PaintInfo& paintInfo, const LayoutPoint&)
 {
+    setEverDidPaint(true);
     if (paintInfo.context->paintingDisabled())
         return;
 

@@ -686,7 +686,7 @@ void RenderTableSection::layoutRows()
                 // If the child moved, we have to repaint it as well as any floating/positioned
                 // descendants.  An exception is if we need a layout.  In this case, we know we're going to
                 // repaint ourselves (and the child) anyway.
-                if (!table()->selfNeedsLayout() && cell->checkForRepaintDuringLayout())
+                if (!table()->selfNeedsLayout())
                     cell->repaintDuringLayoutIfMoved(oldCellRect);
             }
         }
@@ -967,12 +967,14 @@ LayoutUnit RenderTableSection::firstLineBoxBaseline() const
 
 void RenderTableSection::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
+
     // put this back in when all layout tests can handle it
     // ASSERT(!needsLayout());
     // avoid crashing on bugs that cause us to paint with dirty layout
     if (needsLayout())
         return;
-    
+
     unsigned totalRows = m_grid.size();
     unsigned totalCols = table()->columns().size();
 

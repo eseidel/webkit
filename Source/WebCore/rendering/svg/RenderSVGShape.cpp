@@ -270,6 +270,7 @@ void RenderSVGShape::fillAndStrokeShape(GraphicsContext* context)
 
 void RenderSVGShape::paint(PaintInfo& paintInfo, const LayoutPoint&)
 {
+    setEverDidPaint(true);
     if (paintInfo.context->paintingDisabled() || style()->visibility() == HIDDEN || isEmpty())
         return;
     FloatRect boundingBox = repaintRectInLocalCoordinates();

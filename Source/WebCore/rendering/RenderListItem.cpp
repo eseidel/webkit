@@ -381,6 +381,7 @@ void RenderListItem::positionListMarker()
 
 void RenderListItem::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
     if (!logicalHeight() && hasOverflowClip())
         return;
 

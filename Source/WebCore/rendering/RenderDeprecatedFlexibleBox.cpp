@@ -1006,7 +1006,7 @@ void RenderDeprecatedFlexibleBox::placeChild(RenderBox* child, const LayoutPoint
     // If the child moved, we have to repaint it as well as any floating/positioned
     // descendants.  An exception is if we need a layout.  In this case, we know we're going to
     // repaint ourselves (and the child) anyway.
-    if (!selfNeedsLayout() && child->checkForRepaintDuringLayout())
+    if (!selfNeedsLayout())
         child->repaintDuringLayoutIfMoved(oldRect);
 }
 

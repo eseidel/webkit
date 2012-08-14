@@ -106,6 +106,8 @@ void RenderReplaced::intrinsicSizeChanged()
 
 void RenderReplaced::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
+
     if (!shouldPaint(paintInfo, paintOffset))
         return;
     

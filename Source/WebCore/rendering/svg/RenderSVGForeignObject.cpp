@@ -50,6 +50,7 @@ RenderSVGForeignObject::~RenderSVGForeignObject()
 
 void RenderSVGForeignObject::paint(PaintInfo& paintInfo, const LayoutPoint&)
 {
+    setEverDidPaint(true);
     if (paintInfo.context->paintingDisabled()
         || (paintInfo.phase != PaintPhaseForeground && paintInfo.phase != PaintPhaseSelection))
         return;

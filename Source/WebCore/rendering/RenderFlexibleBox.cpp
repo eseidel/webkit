@@ -1086,7 +1086,7 @@ void RenderFlexibleBox::layoutColumnReverse(const OrderedFlexItemList& children,
 
         LayoutRect oldRect = child->frameRect();
         setFlowAwareLocationForChild(child, LayoutPoint(mainAxisOffset, crossAxisOffset + flowAwareMarginBeforeForChild(child)));
-        if (!selfNeedsLayout() && child->checkForRepaintDuringLayout())
+        if (!selfNeedsLayout())
             child->repaintDuringLayoutIfMoved(oldRect);
 
         mainAxisOffset -= flowAwareMarginStartForChild(child);
@@ -1161,7 +1161,7 @@ void RenderFlexibleBox::adjustAlignmentForChild(RenderBox* child, LayoutUnit del
     // If the child moved, we have to repaint it as well as any floating/positioned
     // descendants. An exception is if we need a layout. In this case, we know we're going to
     // repaint ourselves (and the child) anyway.
-    if (!selfNeedsLayout() && child->checkForRepaintDuringLayout())
+    if (!selfNeedsLayout())
         child->repaintDuringLayoutIfMoved(oldRect);
 }
 

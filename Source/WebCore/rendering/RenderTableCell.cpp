@@ -850,6 +850,7 @@ void RenderTableCell::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset
 {
     ASSERT(paintInfo.phase != PaintPhaseCollapsedTableBorders);
     RenderBlock::paint(paintInfo, paintOffset);
+    ASSERT(everDidPaint());
 }
 
 static EBorderStyle collapsedBorderStyle(EBorderStyle style)

@@ -768,12 +768,15 @@ bool RenderBox::nodeAtPoint(const HitTestRequest& request, HitTestResult& result
 
 void RenderBox::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
     LayoutPoint adjustedPaintOffset = paintOffset + location();
     // default implementation. Just pass paint through to the children
     PaintInfo childInfo(paintInfo);
     childInfo.updatePaintingRootForChildren(this);
-    for (RenderObject* child = firstChild(); child; child = child->nextSibling())
+    for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
         child->paint(childInfo, adjustedPaintOffset);
+        ASSERT(child->everDidPaint());
+    }
 }
 
 void RenderBox::paintRootBoxFillLayers(const PaintInfo& paintInfo)
@@ -1472,11 +1475,11 @@ LayoutRect RenderBox::clippedOverflowRectForRepaint(RenderBoxModelObject* repain
     LayoutRect r = visualOverflowRect();
 
     RenderView* v = view();
-    if (v) {
-        // FIXME: layoutDelta needs to be applied in parts before/after transforms and
-        // repaint containers. https://bugs.webkit.org/show_bug.cgi?id=23308
-        r.move(v->layoutDelta());
-    }
+    // if (v) {
+    //     // FIXME: layoutDelta needs to be applied in parts before/after transforms and
+    //     // repaint containers. https://bugs.webkit.org/show_bug.cgi?id=23308
+    //     r.move(v->layoutDelta());
+    // }
     
     if (style()) {
         // We have to use maximalOutlineSize() because a child might have an outline
@@ -1603,17 +1606,24 @@ void RenderBox::computeRectForRepaint(RenderBoxModelObject* repaintContainer, La
 
 void RenderBox::repaintDuringLayoutIfMoved(const LayoutRect& oldRect)
 {
-    if (oldRect.location() != m_frameRect.location()) {
-        LayoutRect newRect = m_frameRect;
+    // If we're not ready to paint yet, just abort.
+    if (!checkForFirstPaintDuringLayout())
+        return;
+    if (oldRect.location() == m_frameRect.location())
+        return;
+
+    LayoutRect newRect = m_frameRect;
+    // No need to repaint the old rect if we've never painted there before.
+    if (everDidPaint()) {
         // The child moved.  Invalidate the object's old and new positions.  We have to do this
         // since the object may not have gotten a layout.
         m_frameRect = oldRect;
         repaint();
         repaintOverhangingFloats(true);
-        m_frameRect = newRect;
-        repaint();
-        repaintOverhangingFloats(true);
     }
+    m_frameRect = newRect;
+    repaint();
+    repaintOverhangingFloats(true);
 }
 
 void RenderBox::computeLogicalWidth()

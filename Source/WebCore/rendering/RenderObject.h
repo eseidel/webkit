@@ -392,6 +392,7 @@ public:
     bool hasCounterNodeMap() const { return m_bitfields.hasCounterNodeMap(); }
     void setHasCounterNodeMap(bool hasCounterNodeMap) { m_bitfields.setHasCounterNodeMap(hasCounterNodeMap); }
     bool everHadLayout() const { return m_bitfields.everHadLayout(); }
+    bool everDidPaint() const { return m_bitfields.everDidPaint(); }
 
     bool childrenInline() const { return m_bitfields.childrenInline(); }
     void setChildrenInline(bool b) { m_bitfields.setChildrenInline(b); }
@@ -753,6 +754,7 @@ public:
     // Called to repaint a block's floats.
     virtual void repaintOverhangingFloats(bool paintAllDescendants = false);
 
+    bool checkForFirstPaintDuringLayout() const;
     bool checkForRepaintDuringLayout() const;
 
     // Returns the rect that should be repainted whenever this object changes.  The rect is in the view's
@@ -934,6 +936,8 @@ protected:
 
     virtual bool canBeReplacedWithInlineRunIn() const;
 
+    void setEverDidPaint(bool b) { m_bitfields.setEverDidPaint(b); }
+
 private:
     RenderStyle* firstLineStyleSlowCase() const;
     StyleDifference adjustStyleDifference(StyleDifference, unsigned contextSensitiveProperties) const;
@@ -992,6 +996,7 @@ private:
             , m_hasReflection(false)
             , m_hasCounterNodeMap(false)
             , m_everHadLayout(false)
+            , m_everDidPaint(false)
             , m_inRenderFlowThread(false)
             , m_childrenInline(false)
             , m_marginBeforeQuirk(false) 
@@ -1030,6 +1035,7 @@ private:
 
         ADD_BOOLEAN_BITFIELD(hasCounterNodeMap, HasCounterNodeMap);
         ADD_BOOLEAN_BITFIELD(everHadLayout, EverHadLayout);
+        ADD_BOOLEAN_BITFIELD(everDidPaint, EverDidPaint);
 
         // These bitfields are moved here from subclasses to pack them together.
         // from RenderFlowThread

@@ -2482,11 +2482,11 @@ void RenderBlock::layoutBlockChild(RenderBox* child, MarginInfo& marginInfo, Lay
         // If the child moved, we have to repaint it as well as any floating/positioned
         // descendants.  An exception is if we need a layout.  In this case, we know we're going to
         // repaint ourselves (and the child) anyway.
-        if (childHadLayout && !selfNeedsLayout() && child->checkForRepaintDuringLayout())
+        if (childHadLayout && !selfNeedsLayout())
             child->repaintDuringLayoutIfMoved(oldRect);
     }
 
-    if (!childHadLayout && child->checkForRepaintDuringLayout()) {
+    if (!childHadLayout && child->checkForFirstPaintDuringLayout()) {
         child->repaint();
         child->repaintOverhangingFloats(true);
     }
@@ -2681,8 +2681,9 @@ void RenderBlock::repaintOverhangingFloats(bool paintAllDescendants)
  
 void RenderBlock::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
+
     LayoutPoint adjustedPaintOffset = paintOffset + location();
-    
     PaintPhase phase = paintInfo.phase;
 
     // Check if we need to do anything at all.
@@ -3960,8 +3961,7 @@ bool RenderBlock::positionNewFloats()
         m_floatingObjects->addPlacedObject(floatingObject);
 
         // If the child moved, we have to repaint it.
-        if (childBox->checkForRepaintDuringLayout())
-            childBox->repaintDuringLayoutIfMoved(oldRect);
+        childBox->repaintDuringLayoutIfMoved(oldRect);
     }
     return true;
 }

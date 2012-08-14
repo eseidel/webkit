@@ -253,6 +253,7 @@ ColumnInfo::PaginationUnit RenderView::paginationUnit() const
 
 void RenderView::paint(PaintInfo& paintInfo, const LayoutPoint& paintOffset)
 {
+    setEverDidPaint(true);
     // If we ever require layout but receive a paint anyway, something has gone horribly wrong.
     ASSERT(!needsLayout());
     // RenderViews should never be called to paint with an offset not on device pixels.
