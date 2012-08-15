@@ -638,7 +638,7 @@ void RenderListBox::scrollTo(int newOffset)
         return;
 
     m_indexOffset = newOffset;
-    repaint();
+    repaintDuringLayout(CurrentBounds);
     node()->document()->eventQueue()->enqueueOrDispatchScrollEvent(node(), DocumentEventQueue::ScrollEventElementTarget);
 }
 

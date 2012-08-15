@@ -84,9 +84,9 @@ RenderObject* RenderObjectChildList::removeChildNode(RenderObject* owner, Render
     if (!owner->documentBeingDestroyed() && fullRemove && oldChild->everHadLayout()) {
         oldChild->setNeedsLayoutAndPrefWidthsRecalc();
         if (oldChild->isBody())
-            owner->view()->repaint();
+            owner->view()->repaintDuringLayout(PreLayoutBounds);
         else
-            oldChild->repaint();
+            oldChild->repaintDuringLayout(PreLayoutBounds);
     }
 
     // If we have a line box wrapper, delete it.

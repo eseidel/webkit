@@ -133,8 +133,9 @@ void RenderSVGResourceContainer::markClientForInvalidation(RenderObject* client,
         client->setNeedsBoundariesUpdate();
         break;
     case RepaintInvalidation:
+        // FIXME: Is this always called during layout?
         if (client->view())
-            client->repaint();
+            client->repaintDuringLayout(PreLayoutBounds);
         break;
     case ParentOnlyInvalidation:
         break;

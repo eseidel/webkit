@@ -2487,8 +2487,8 @@ void RenderBlock::layoutBlockChild(RenderBox* child, MarginInfo& marginInfo, Lay
     }
 
     if (!childHadLayout && child->checkForRepaintDuringLayout()) {
-        child->repaint();
-        child->repaintOverhangingFloats(true);
+        child->repaintDuringLayout(CurrentBounds);
+        child->repaintOverhangingFloats(CurrentBounds, true);
     }
 
     if (paginated) {
@@ -2655,7 +2655,7 @@ void RenderBlock::markForPaginationRelayoutIfNeeded()
         setChildNeedsLayout(true, MarkOnlyThis);
 }
 
-void RenderBlock::repaintOverhangingFloats(bool paintAllDescendants)
+void RenderBlock::repaintOverhangingFloats(ShouldUseLayoutDelta repaintMode, bool paintAllDescendants)
 {
     // Repaint any overhanging floats (if we know we're the one to paint them).
     // Otherwise, bail out.
@@ -2673,8 +2673,8 @@ void RenderBlock::repaintOverhangingFloats(bool paintAllDescendants)
         // is our responsibility to paint (m_shouldPaint is set). When paintAllDescendants is true, the latter
         // condition is replaced with being a descendant of us.
         if (logicalBottomForFloat(r) > logicalHeight() && ((paintAllDescendants && r->m_renderer->isDescendantOf(this)) || r->shouldPaint()) && !r->m_renderer->hasSelfPaintingLayer()) {
-            r->m_renderer->repaint();
-            r->m_renderer->repaintOverhangingFloats();
+            r->m_renderer->repaintDuringLayout(repaintMode);
+            r->m_renderer->repaintOverhangingFloats(repaintMode);
         }
     }
 }

@@ -300,7 +300,8 @@ void RenderTableSection::setCellLogicalWidths()
                         // rows don't push a coordinate transform, that's not necessary.
                         statePusher.push(this, locationOffset());
                     }
-                    cell->repaint();
+                    // FIXME: Does this want to be pre-layout?
+                    cell->repaintDuringLayout(PreLayoutBounds);
                 }
                 cell->updateLogicalWidth(w);
             }

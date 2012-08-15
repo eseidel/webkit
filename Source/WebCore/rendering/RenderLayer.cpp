@@ -2568,7 +2568,8 @@ void RenderLayer::updateScrollbarsAfterLayout()
             renderer()->document()->setDashboardRegionsDirty(true);
 #endif
 
-        renderer()->repaint();
+        // FIXME: Do we need to invalidate the old location of the scrollbar too?
+        renderer()->repaintDuringLayout(CurrentBounds);
 
         if (renderer()->style()->overflowX() == OAUTO || renderer()->style()->overflowY() == OAUTO) {
             if (!m_inOverflowRelayout) {
@@ -5115,8 +5116,9 @@ void RenderLayer::updateOrRemoveFilterEffect()
 void RenderLayer::filterNeedsRepaint()
 {
     renderer()->node()->setNeedsStyleRecalc(SyntheticStyleChange);
+    // FIXME: Unclear if this wants to repaint the old or new bounds.
     if (renderer()->view())
-        renderer()->repaint();
+        renderer()->repaintDuringLayout(CurrentBounds);
 }
 #endif
 

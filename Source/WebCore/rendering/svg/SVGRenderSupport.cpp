@@ -243,7 +243,7 @@ void SVGRenderSupport::layoutChildren(RenderObject* start, bool selfNeedsLayout)
             // We could handle this in the individual objects, but for now it's easier to have
             // parent containers call repaint().  (RenderBlock::layout* has similar logic.)
             if (!childEverHadLayout)
-                child->repaint();
+                child->repaintDuringLayout(CurrentBounds);
         } else if (layoutSizeChanged)
             notlayoutedObjects.add(child);
 

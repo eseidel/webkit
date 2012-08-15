@@ -323,7 +323,8 @@ void RenderBox::updateBoxModelInfoFromStyle()
         if (boxHasOverflowClip) {
             if (!s_hadOverflowClip)
                 // Erase the overflow
-                repaint();
+                // We should not be updating style during layout, but we are in the first-letter case.
+                repaintDuringLayout(PreLayoutBounds); // FIXME: Are we sure this should be pre-layout?
             setHasOverflowClip();
         }
     }
@@ -1603,17 +1604,19 @@ void RenderBox::computeRectForRepaint(RenderBoxModelObject* repaintContainer, La
 
 void RenderBox::repaintDuringLayoutIfMoved(const LayoutRect& oldRect)
 {
-    if (oldRect.location() != m_frameRect.location()) {
-        LayoutRect newRect = m_frameRect;
-        // The child moved.  Invalidate the object's old and new positions.  We have to do this
-        // since the object may not have gotten a layout.
-        m_frameRect = oldRect;
-        repaint();
-        repaintOverhangingFloats(true);
-        m_frameRect = newRect;
-        repaint();
-        repaintOverhangingFloats(true);
-    }
+    if (oldRect.location() == m_frameRect.location())
+        return;
+
+    LayoutRect newRect = m_frameRect;
+    // The child moved.  Invalidate the object's old and new positions.  We have to do this
+    // since the object may not have gotten a layout.
+    m_frameRect = oldRect;
+    repaintDuringLayout(PreLayoutBounds);
+    repaintOverhangingFloats(PreLayoutBounds, true);
+
+    m_frameRect = newRect;
+    repaintDuringLayout(CurrentBounds);
+    repaintOverhangingFloats(CurrentBounds, true);
 }
 
 void RenderBox::computeLogicalWidth()

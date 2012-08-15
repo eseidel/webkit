@@ -1461,7 +1461,7 @@ void RenderBlock::repaintDirtyFloats(Vector<FloatWithRect>& floats)
         if (!floats[i].everHadLayout) {
             RenderBox* f = floats[i].object;
             if (!f->x() && !f->y() && f->checkForRepaintDuringLayout())
-                f->repaint();
+                f->repaintDuringLayout(CurrentBounds);
         }
     }
 }

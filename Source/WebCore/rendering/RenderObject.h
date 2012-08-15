@@ -114,6 +114,11 @@ enum MapLocalToContainerMode {
 };
 typedef unsigned MapLocalToContainerFlags;
 
+enum ShouldUseLayoutDelta {
+    PreLayoutBounds,
+    CurrentBounds
+};
+
 const int caretWidth = 1;
 
 #if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
@@ -739,6 +744,7 @@ public:
     
     // Repaint the entire object.  Called when, e.g., the color of a border changes, or when a border
     // style changes.
+    // Note: This method cannot be called during layout(), repaintDuringLayout() must be used instead.
     void repaint(bool immediate = false);
 
     // Repaint a specific subrectangle within a given object.  The rect |r| is in the object's coordinate space.
@@ -750,8 +756,12 @@ public:
     // Repaint only if the object moved.
     virtual void repaintDuringLayoutIfMoved(const LayoutRect&);
 
+    // During layout(), layoutDelta() can be in effect, and callers must disambiguate whether
+    // they wish to repaint using the pre-layout (old) bounds, or the current (new) bounds.
+    void repaintDuringLayout(ShouldUseLayoutDelta);
+
     // Called to repaint a block's floats.
-    virtual void repaintOverhangingFloats(bool paintAllDescendants = false);
+    virtual void repaintOverhangingFloats(ShouldUseLayoutDelta, bool paintAllDescendants = false);
 
     bool checkForRepaintDuringLayout() const;
 
@@ -939,6 +949,8 @@ private:
     StyleDifference adjustStyleDifference(StyleDifference, unsigned contextSensitiveProperties) const;
 
     Color selectionColor(int colorProperty) const;
+
+    void sharedRepaint(ShouldUseLayoutDelta, bool immediate);
 
 #ifndef NDEBUG
     void checkBlockPositionedObjectsNeedLayout();

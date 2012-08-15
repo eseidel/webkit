@@ -1295,7 +1295,7 @@ void RenderObject::repaintUsingContainer(RenderBoxModelObject* repaintContainer,
 #endif
 }
 
-void RenderObject::repaint(bool immediate)
+void RenderObject::sharedRepaint(ShouldUseLayoutDelta, bool immediate)
 {
     // Don't repaint if we're unrooted (note that view() still returns the view when unrooted)
     RenderView* view;
@@ -1307,6 +1307,20 @@ void RenderObject::repaint(bool immediate)
 
     RenderBoxModelObject* repaintContainer = containerForRepaint();
     repaintUsingContainer(repaintContainer ? repaintContainer : view, clippedOverflowRectForRepaint(repaintContainer), immediate);
+}
+
+void RenderObject::repaint(bool immediate)
+{
+    ASSERT(!view()->frameView()->isInLayout());
+    sharedRepaint(CurrentBounds, immediate);
+}
+
+void RenderObject::repaintDuringLayout(ShouldUseLayoutDelta repaintMode)
+{
+    // We'd like to ASSERT that we're in layout here, but there are quite a few callers
+    // which are called both during layout and at other times. :(
+    // ASSERT(view()->frameView()->isInLayout());
+    sharedRepaint(repaintMode, false);
 }
 
 void RenderObject::repaintRectangle(const LayoutRect& r, bool immediate)
@@ -1447,7 +1461,7 @@ void RenderObject::repaintDuringLayoutIfMoved(const LayoutRect&)
 {
 }
 
-void RenderObject::repaintOverhangingFloats(bool)
+void RenderObject::repaintOverhangingFloats(ShouldUseLayoutDelta, bool)
 {
 }
 
