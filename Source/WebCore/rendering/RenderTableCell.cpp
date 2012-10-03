@@ -130,9 +130,7 @@ LayoutUnit RenderTableCell::logicalHeightForRowSizing() const
     } else {
         // In strict mode, box-sizing: content-box do the right
         // thing and actually add in the border and padding.
-        LayoutUnit adjustedPaddingBefore = paddingBefore() - intrinsicPaddingBefore();
-        LayoutUnit adjustedPaddingAfter = paddingAfter() - intrinsicPaddingAfter();
-        styleLogicalHeight += adjustedPaddingBefore + adjustedPaddingAfter + borderBefore() + borderAfter();
+        styleLogicalHeight += computedCSSPaddingBefore() + computedCSSPaddingAfter() + borderBefore() + borderAfter();
     }
 
     return max(styleLogicalHeight, adjustedLogicalHeight);
