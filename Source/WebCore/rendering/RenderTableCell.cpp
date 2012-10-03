@@ -52,6 +52,8 @@ RenderTableCell::RenderTableCell(Node* node)
     , m_column(unsetColumnIndex)
     , m_cellWidthChanged(false)
     , m_hasHTMLTableCellElement(node && (node->hasTagName(tdTag) || node->hasTagName(thTag)))
+    , m_hasColSpan(false)
+    , m_hasRowSpan(false)
     , m_intrinsicPaddingBefore(0)
     , m_intrinsicPaddingAfter(0)
 {
@@ -72,7 +74,7 @@ inline bool isMathMLElement(Node* node)
 }
 #endif
 
-unsigned RenderTableCell::colSpan() const
+unsigned RenderTableCell::parseColSpanFromDOM() const
 {
     if (UNLIKELY(!m_hasHTMLTableCellElement)) {
 #if ENABLE(MATHML)
@@ -85,7 +87,7 @@ unsigned RenderTableCell::colSpan() const
     return toHTMLTableCellElement(node())->colSpan();
 }
 
-unsigned RenderTableCell::rowSpan() const
+unsigned RenderTableCell::parseRowSpanFromDOM() const
 {
     if (UNLIKELY(!m_hasHTMLTableCellElement)) {
 #if ENABLE(MATHML)
@@ -213,6 +215,11 @@ void RenderTableCell::setCellLogicalWidth(LayoutUnit w)
 
 void RenderTableCell::layout()
 {
+    // The vast majority of table cells do not have a colspan or rowspan,
+    // so we keep a bool to know if we need to bother reading from the DOM.
+    m_hasColSpan = parseColSpanFromDOM() != 1;
+    m_hasRowSpan = parseRowSpanFromDOM() != 1;
+
     updateFirstLetter();
     layoutBlock(cellWidthChanged());
     setCellWidthChanged(false);

@@ -368,7 +368,7 @@ void RenderTable::layout()
 
     bool collapsing = collapseBorders();
 
-    for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
+    for (RenderObject* child = children()->firstChild(); child; child = child->nextSibling()) {
         if (child->isTableSection()) {
             child->layoutIfNeeded();
             RenderTableSection* section = toRenderTableSection(child);
@@ -496,7 +496,7 @@ void RenderTable::recalcCollapsedBorders()
         return;
     m_collapsedBordersValid = true;
     m_collapsedBorders.clear();
-    for (RenderObject* section = firstChild(); section; section = section->nextSibling()) {
+    for (RenderObject* section = children()->firstChild(); section; section = section->nextSibling()) {
         if (!section->isTableSection())
             continue;
         for (RenderObject* row = section->firstChild(); row; row = row->nextSibling()) {
@@ -592,7 +592,7 @@ void RenderTable::paintObject(PaintInfo& paintInfo, const LayoutPoint& paintOffs
 
     IntPoint alignedOffset = roundedIntPoint(paintOffset);
 
-    for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
+    for (RenderObject* child = children()->firstChild(); child; child = child->nextSibling()) {
         if (child->isBox() && !toRenderBox(child)->hasSelfPaintingLayer() && (child->isTableSection() || child->isTableCaption())) {
             LayoutPoint childPoint = flipForWritingModeForChild(toRenderBox(child), alignedOffset);
             child->paint(info, childPoint);
@@ -701,7 +701,7 @@ void RenderTable::splitColumn(unsigned position, unsigned firstSpan)
 
     // Propagate the change in our columns representation to the sections that don't need
     // cell recalc. If they do, they will be synced up directly with m_columns later.
-    for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
+    for (RenderObject* child = children()->firstChild(); child; child = child->nextSibling()) {
         if (!child->isTableSection())
             continue;
 
@@ -725,7 +725,7 @@ void RenderTable::appendColumn(unsigned span)
 
     // Propagate the change in our columns representation to the sections that don't need
     // cell recalc. If they do, they will be synced up directly with m_columns later.
-    for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
+    for (RenderObject* child = children()->firstChild(); child; child = child->nextSibling()) {
         if (!child->isTableSection())
             continue;
 
@@ -742,7 +742,7 @@ void RenderTable::appendColumn(unsigned span)
 
 RenderTableCol* RenderTable::firstColumn() const
 {
-    for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
+    for (RenderObject* child = children()->firstChild(); child; child = child->nextSibling()) {
         if (child->isRenderTableCol())
             return toRenderTableCol(child);
 
@@ -792,7 +792,7 @@ void RenderTable::recalcSections() const
 
     // We need to get valid pointers to caption, head, foot and first body again
     RenderObject* nextSibling;
-    for (RenderObject* child = firstChild(); child; child = nextSibling) {
+    for (RenderObject* child = children()->firstChild(); child; child = nextSibling) {
         nextSibling = child->nextSibling();
         switch (child->style()->display()) {
         case TABLE_COLUMN:
@@ -834,7 +834,7 @@ void RenderTable::recalcSections() const
 
     // repair column count (addChild can grow it too much, because it always adds elements to the last row of a section)
     unsigned maxCols = 0;
-    for (RenderObject* child = firstChild(); child; child = child->nextSibling()) {
+    for (RenderObject* child = children()->firstChild(); child; child = child->nextSibling()) {
         if (child->isTableSection()) {
             RenderTableSection* section = toRenderTableSection(child);
             unsigned sectionCols = section->numColumns();
@@ -1101,7 +1101,7 @@ RenderTableSection* RenderTable::sectionBelow(const RenderTableSection* section,
     if (section == m_foot)
         return 0;
 
-    RenderObject* nextSection = section == m_head ? firstChild() : section->nextSibling();
+    RenderObject* nextSection = section == m_head ? children()->firstChild() : section->nextSibling();
     while (nextSection) {
         if (nextSection->isTableSection() && nextSection != m_head && nextSection != m_foot && (skipEmptySections  == DoNotSkipEmptySections || toRenderTableSection(nextSection)->numRows()))
             break;

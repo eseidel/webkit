@@ -116,7 +116,7 @@ void RenderTableCol::computePreferredLogicalWidths()
 {
     setPreferredLogicalWidthsDirty(false);
 
-    for (RenderObject* child = firstChild(); child; child = child->nextSibling())
+    for (RenderObject* child = m_children.firstChild(); child; child = child->nextSibling())
         child->setPreferredLogicalWidthsDirty(false);
 }
 
@@ -142,7 +142,7 @@ RenderTableCol* RenderTableCol::enclosingColumnGroup() const
 RenderTableCol* RenderTableCol::nextColumn() const
 {
     // If |this| is a column-group, the next column is the colgroup's first child column.
-    if (RenderObject* firstChild = this->firstChild())
+    if (RenderObject* firstChild = m_children.firstChild())
         return toRenderTableCol(firstChild);
 
     // Otherwise it's the next column along.
