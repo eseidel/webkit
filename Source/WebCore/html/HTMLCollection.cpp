@@ -176,6 +176,59 @@ HTMLCollection::~HTMLCollection()
     document()->unregisterNodeListCache(this);
 }
 
+bool HTMLCollection::shouldInvalidateAfterElementInsertion(CollectionType type, Element* element)
+{
+    ASSERT(element->childNodeCount() == 0);
+    ASSERT(!element->hasAttributes());
+    if (!element->isHTMLElement() && !(type == DocAll || type == NodeChildren))
+        return false;
+
+    switch (type) {
+    case DocImages:
+        return element->hasLocalName(imgTag);
+    case DocScripts:
+        return element->hasLocalName(scriptTag);
+    case DocForms:
+        return element->hasLocalName(formTag);
+    case TableTBodies:
+        return element->hasLocalName(tbodyTag);
+    case TRCells:
+        return element->hasLocalName(tdTag) || element->hasLocalName(thTag);
+    case TSectionRows:
+        return element->hasLocalName(trTag);
+    case SelectOptions:
+    case SelectedOptions:
+    case DataListOptions:
+        return element->hasLocalName(optionTag);
+    case MapAreas:
+        return element->hasLocalName(areaTag);
+    case DocApplets:
+        return element->hasLocalName(appletTag) || element->hasLocalName(objectTag);
+    case DocEmbeds:
+        return element->hasLocalName(embedTag);
+    case DocObjects:
+        return element->hasLocalName(objectTag);
+    case DocLinks:
+        return element->hasLocalName(aTag) || element->hasLocalName(areaTag);
+    case DocAnchors:
+        return element->hasLocalName(aTag);
+    case DocAll:
+    case NodeChildren:
+        return true;
+    case TableRows:
+        return element->hasLocalName(trTag);
+#if ENABLE(MICRODATA)
+    case ItemProperties:
+#endif
+    case FormControls:
+    case DocumentNamedItems:
+    case WindowNamedItems:
+    case NodeListCollectionType:
+        return true;
+    }
+    return true;
+}
+
 static inline bool isAcceptableElement(CollectionType type, Element* element)
 {
     if (!element->isHTMLElement() && !(type == DocAll || type == NodeChildren))

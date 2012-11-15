@@ -717,11 +717,28 @@ void ContainerNode::detach()
     clearChildNeedsStyleRecalc();
 }
 
-void ContainerNode::childrenChanged(bool changedByParser, Node*, Node*, int childCountDelta)
+static Node* addedNode(ContainerNode* parent, Node* beforeChild, Node* afterChild, int childCountDelta)
+{
+    if (childCountDelta != 1)
+        return 0;
+    if (beforeChild) {
+        ASSERT(!afterChild || beforeChild->nextSibling() == afterChild->previousSibling());
+        return beforeChild->nextSibling();
+    } else if (afterChild)
+        return afterChild->previousSibling();
+    ASSERT(parent->childNodeCount() == 1);
+    return parent->firstChild();
+}
+
+void ContainerNode::childrenChanged(bool changedByParser, Node* beforeChild, Node* afterChild, int childCountDelta)
 {
     document()->incDOMTreeVersion();
     if (!changedByParser && childCountDelta)
         document()->updateRangesAfterChildrenChanged(this);
+    if (Node* newChild = addedNode(this, beforeChild, afterChild, childCountDelta)) {
+        if (newChild->isElementNode())
+            return invalidateNodeListCachesInAncestors(0, toElement(newChild));
+    }
     invalidateNodeListCachesInAncestors();
 }
 

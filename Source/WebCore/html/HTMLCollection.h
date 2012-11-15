@@ -99,6 +99,8 @@ public:
     Node* base() const { return ownerNode(); }
     virtual Element* virtualItemAfter(unsigned& offsetInArray, Element*) const;
 
+    static bool shouldInvalidateAfterElementInsertion(CollectionType type, Element* element);
+
 protected:
     HTMLCollection(Node* base, CollectionType, ItemAfterOverrideType);
 

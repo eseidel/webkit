@@ -31,6 +31,77 @@
 
 namespace WebCore {
 
+bool NodeListInvalidation::shouldInvalidate(HTMLCollection* collection)
+{
+    if (m_invalidateNameAndIdCache)
+        return true;
+    if (!m_attrName) {
+        // FIXME: This should be a mask compare instead of special-casing TableRow.
+        if (m_element && collection->type() == TableRows)
+            return m_hasTR;
+        return true;
+    }
+    return DynamicNodeListCacheBase::shouldInvalidateTypeOnAttributeChange(collection->invalidationType(), *m_attrName);
+}
+
+void NodeListInvalidation::updateMaskFromSubtree(Element* root)
+{
+    int nodesLeftBeforeLimit = 100;
+    for (Node* node = root; node; node = node->traverseNextNode(root)) {
+        if (nodesLeftBeforeLimit <= 0 || isFullInvalidation())
+            break;
+        addNode(node);
+        nodesLeftBeforeLimit--;
+    }
+}
+
+void NodeListInvalidation::addTagName(const QualifiedName& tagName)
+{
+    // We probably can use == instead of .matches here, we just use .matches to support XHTML content (which can have prefixes).
+    if (tagName.matches(imgTag))
+        m_mask |= ImageMask;
+    else if (tagName.matches(scriptTag))
+        m_mask |= ScriptMask;
+    else if (tagName.matches(formTag))
+        m_mask |= FormMask;
+    else if (tagName.matches(tbodyTag))
+        m_mask |= TableBodyMask;
+    else if (tagName.matches(tdTag) || tagName.matches(thTag))
+        m_mask |= TableCellMask;
+    else if (tagName.matches(trTag))
+        m_mask |= TableRowMask;
+    else if (tagName.matches(optionTag))
+        m_mask |= OptionMask;
+    else if (tagName.matches(areaTag))
+        m_mask |= AreaMask;
+    else if (tagName.matches(appletTag))
+        m_mask |= AppletMask;
+    else if (tagName.matches(objectTag))
+        m_mask |= ObjectMask;
+    else if (tagName.matches(aTag))
+        m_mask |= AnchorMask;
+    else if (tagName.matches(embedTag))
+        m_mask |= EmbedMask;
+    else
+        m_mask |= UnknownNodeMask;
+}
+
+void NodeListInvalidation::addNode(Node* node)
+{
+    if (!node->isElementNode()) {
+        m_mask |= UnknownNodeMask;
+        return;
+    }
+    Element* element = toElement(node);
+    addTagName(element->tagName());
+    if (!element->hasAttributes())
+        return;
+
+    size_t attributeCount = element->attributeCount();
+    for (size_t i = 0; i < attributeCount; i++)
+        addAttributeName(element->attributeItem(i)->name());
+}
+
 Node* DynamicNodeListCacheBase::rootNode() const
 {
     if (isRootedAtDocument() && m_ownerNode->inDocument())

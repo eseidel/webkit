@@ -75,16 +75,14 @@ public:
         (*m_cachedCollections)[type - FirstNodeCollectionType] = 0;
     }
 
-    void clearHTMLCollectionCaches(const QualifiedName* attrName)
+    void clearHTMLCollectionCaches(NodeListInvalidation& invalidation)
     {
         if (!m_cachedCollections)
             return;
 
-        bool shouldIgnoreType = !attrName || *attrName == HTMLNames::idAttr || *attrName == HTMLNames::nameAttr;
-
         for (unsigned i = 0; i < (*m_cachedCollections).size(); i++) {
             if (HTMLCollection* collection = (*m_cachedCollections)[i]) {
-                if (shouldIgnoreType || DynamicNodeListCacheBase::shouldInvalidateTypeOnAttributeChange(collection->invalidationType(), *attrName))
+                if (invalidation.shouldInvalidate(collection))
                     collection->invalidateCache();
             }
         }

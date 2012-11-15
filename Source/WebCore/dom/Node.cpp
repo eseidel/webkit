@@ -1012,6 +1012,8 @@ void Node::invalidateNodeListCachesInAncestors(const QualifiedName* attrName, El
 
     document()->invalidateNodeListCaches(attrName);
 
+    NodeListInvalidation invalidation(attrName, attributeOwnerElement);
+
     for (Node* node = this; node; node = node->parentNode()) {
         if (!node->hasRareData())
             continue;
@@ -1019,7 +1021,7 @@ void Node::invalidateNodeListCachesInAncestors(const QualifiedName* attrName, El
         if (data->nodeLists())
             data->nodeLists()->invalidateCaches(attrName);
         if (node->isElementNode())
-            static_cast<ElementRareData*>(data)->clearHTMLCollectionCaches(attrName);
+            static_cast<ElementRareData*>(data)->clearHTMLCollectionCaches(invalidation);
     }
 }
 

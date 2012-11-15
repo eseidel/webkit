@@ -40,6 +40,72 @@ enum NodeListRootType {
     NodeListIsRootedAtDocumentIfOwnerHasItemrefAttr,
 };
 
+// This class builds a mask
+// And then the mask here is compared with an invalidation mask pre-prepared
+// for each of the node list types.
+
+class NodeListInvalidation {
+public:
+    NodeListInvalidation(const QualifiedName* attrName, Element* element)
+        : m_attrName(attrName)
+        , m_element(element)
+        , m_mask(0)
+    {
+        // FIXME: Assuming !attrName implies element-invalidation may not be valid.
+        if (attrName || !element) {
+            if (attrName)
+                addAttributeName(*attrName);
+            else
+                forceFullInvalidation();
+            return;
+        }
+        updateMaskFromSubtree(element);
+    }
+
+    void addAttributeName(const QualifiedName& attrName)
+    {
+        // FIXME: This means if we find any attribute in the entire subtree
+        // we fall-back to the old behavior of invalidating all node-lists!
+        forceFullInvalidation();
+    }
+
+    void forceFullInvalidation()
+    {
+        m_mask = static_cast<InvalidationMask>(-1);
+    }
+
+    bool isFullInvalidation()
+    {
+        m_mask == static_cast<InvalidationMask>(-1);
+    }
+
+    bool shouldInvalidate(HTMLCollection*);
+
+private:
+    enum {
+        ImageMask       = 1 << 0,
+        ScriptMask      = 1 << 1,
+        FormMask        = 1 << 2,
+        TableBodyMask   = 1 << 3,
+        TableCellMask   = 1 << 4,
+        TableRowMask    = 1 << 5,
+        OptionMask      = 1 << 6,
+        AreaMask        = 1 << 7,
+        AppletMask      = 1 << 8,
+        ObjectMask      = 1 << 9,
+        AnchorMask      = 1 << 10,
+        EmbedMask       = 1 << 11,
+        TableRowMask    = 1 << 12,
+        UnknownNodeMask = 1 << 13,
+    };
+
+    typedef size_t InvalidationMask;
+
+    const QualifiedName* m_attrName;
+    Element* m_element;
+    InvalidationMask m_mask;
+};
+
 class DynamicNodeListCacheBase {
 public:
     enum ItemAfterOverrideType {
