@@ -44,6 +44,31 @@ enum NodeListRootType {
 // And then the mask here is compared with an invalidation mask pre-prepared
 // for each of the node list types.
 
+class NodeListInvalidationMask {
+public:
+    enum {
+        ImageMask       = 1 << 0,
+        ScriptMask      = 1 << 1,
+        FormMask        = 1 << 2,
+        TableBodyMask   = 1 << 3,
+        TableCellMask   = 1 << 4,
+        TableRowMask    = 1 << 5,
+        OptionMask      = 1 << 6,
+        AreaMask        = 1 << 7,
+        AppletMask      = 1 << 8,
+        ObjectMask      = 1 << 9,
+        AnchorMask      = 1 << 10,
+        EmbedMask       = 1 << 11,
+        TableRowMask    = 1 << 12,
+        UnknownNodeMask = 1 << 13,
+    };
+
+    NodeListInvalidationMask(unsigned mask)
+
+private:
+    unsigned m_storage;
+};
+
 class NodeListInvalidation {
 public:
     NodeListInvalidation(const QualifiedName* attrName, Element* element)
@@ -82,23 +107,6 @@ public:
     bool shouldInvalidate(HTMLCollection*);
 
 private:
-    enum {
-        ImageMask       = 1 << 0,
-        ScriptMask      = 1 << 1,
-        FormMask        = 1 << 2,
-        TableBodyMask   = 1 << 3,
-        TableCellMask   = 1 << 4,
-        TableRowMask    = 1 << 5,
-        OptionMask      = 1 << 6,
-        AreaMask        = 1 << 7,
-        AppletMask      = 1 << 8,
-        ObjectMask      = 1 << 9,
-        AnchorMask      = 1 << 10,
-        EmbedMask       = 1 << 11,
-        TableRowMask    = 1 << 12,
-        UnknownNodeMask = 1 << 13,
-    };
-
     typedef size_t InvalidationMask;
 
     const QualifiedName* m_attrName;
