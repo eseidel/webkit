@@ -173,11 +173,38 @@ class DeviceConnection(object):
             error_handler = self._executive.ignore_error
         else:
             error_handler = None
+        # FIXME: adb shell is known to never exit non-zero, but there are workarounds we should use:
+        # https://code.google.com/p/android/issues/detail?id=3254
         result = self._executive.run_command(self._adb_command() + cmd, error_handler=error_handler)
         # Limit the length to avoid too verbose output of commands like 'adb logcat' and 'cat /data/tombstones/tombstone01'
         # whose outputs are normally printed in later logs.
         self._log_debug('Run adb result: ' + result[:80])
         return result
+
+    def push_to_device(self, host_path, device_path, ignore_error=False):
+        return self._run_adb_command(['push', host_path, device_path], ignore_error)
+
+    def file_exists_on_device(self, full_file_path):
+        assert full_file_path.startswith('/')
+        return self._run_adb_command(['shell', 'ls', full_file_path]).strip() == full_file_path
+
+    @staticmethod
+    def _extract_hashes_from_md5sum_output(md5sum_output):
+        assert md5sum_output
+        return [line.split('  ')[0] for line in md5sum_output]
+
+    def push_file_if_needed(self, host_file, device_file):
+        assert os.path.exists(host_file)
+        # FIXME: We should use a higher abstraction than "popen" to run these commands.
+        device_hashes = self._extract_hashes_from_md5sum_output(
+                self._executive.popen(self._adb_command() + ['shell', MD5SUM_DEVICE_PATH, device_file],
+                                                stdout=subprocess.PIPE).stdout)
+        host_hashes = self._extract_hashes_from_md5sum_output(
+                self._executive.popen(args=['%s_host' % self._md5sum_path, host_file],
+                                                stdout=subprocess.PIPE).stdout)
+        if host_hashes and device_hashes == host_hashes:
+            return
+        self.push_to_device(host_file, device_file)
 
 
 class ChromiumAndroidPort(chromium.ChromiumPort):
@@ -407,8 +434,8 @@ class ChromiumAndroidDriver(driver.Driver):
 
     def _setup_md5sum_and_push_data_if_needed(self):
         self._md5sum_path = self._port.path_to_md5sum()
-        if not self._file_exists_on_device(MD5SUM_DEVICE_PATH):
-            if not self._push_to_device(self._md5sum_path, MD5SUM_DEVICE_PATH):
+        if not self._device.file_exists_on_device(MD5SUM_DEVICE_PATH):
+            if not self._device.push_to_device(self._md5sum_path, MD5SUM_DEVICE_PATH):
                 raise AssertionError('Could not push md5sum to device')
 
         self._push_executable()
@@ -446,29 +473,12 @@ class ChromiumAndroidDriver(driver.Driver):
     def _abort(self, message):
         raise AssertionError('[%s] %s' % (self._device.identifier(), message))
 
-    @staticmethod
-    def _extract_hashes_from_md5sum_output(md5sum_output):
-        assert md5sum_output
-        return [line.split('  ')[0] for line in md5sum_output]
-
-    def _push_file_if_needed(self, host_file, device_file):
-        assert os.path.exists(host_file)
-        device_hashes = self._extract_hashes_from_md5sum_output(
-                self._port.host.executive.popen(self._adb_command() + ['shell', MD5SUM_DEVICE_PATH, device_file],
-                                                stdout=subprocess.PIPE).stdout)
-        host_hashes = self._extract_hashes_from_md5sum_output(
-                self._port.host.executive.popen(args=['%s_host' % self._md5sum_path, host_file],
-                                                stdout=subprocess.PIPE).stdout)
-        if host_hashes and device_hashes == host_hashes:
-            return
-        self._push_to_device(host_file, device_file)
-
     def _push_executable(self):
-        self._push_file_if_needed(self._port.path_to_forwarder(), DEVICE_FORWARDER_PATH)
-        self._push_file_if_needed(self._port._build_path('DumpRenderTree.pak'), DEVICE_DRT_DIR + 'DumpRenderTree.pak')
-        self._push_file_if_needed(self._port._build_path('DumpRenderTree_resources'), DEVICE_DRT_DIR + 'DumpRenderTree_resources')
-        self._push_file_if_needed(self._port._build_path('android_main_fonts.xml'), DEVICE_DRT_DIR + 'android_main_fonts.xml')
-        self._push_file_if_needed(self._port._build_path('android_fallback_fonts.xml'), DEVICE_DRT_DIR + 'android_fallback_fonts.xml')
+        self._device.push_file_if_needed(self._port.path_to_forwarder(), DEVICE_FORWARDER_PATH)
+        self._device.push_file_if_needed(self._port._build_path('DumpRenderTree.pak'), DEVICE_DRT_DIR + 'DumpRenderTree.pak')
+        self._device.push_file_if_needed(self._port._build_path('DumpRenderTree_resources'), DEVICE_DRT_DIR + 'DumpRenderTree_resources')
+        self._device.push_file_if_needed(self._port._build_path('android_main_fonts.xml'), DEVICE_DRT_DIR + 'android_main_fonts.xml')
+        self._device.push_file_if_needed(self._port._build_path('android_fallback_fonts.xml'), DEVICE_DRT_DIR + 'android_fallback_fonts.xml')
         self._run_adb_command(['uninstall', DRT_APP_PACKAGE])
         drt_host_path = self._port._path_to_driver()
         install_result = self._run_adb_command(['install', drt_host_path])
@@ -478,17 +488,17 @@ class ChromiumAndroidDriver(driver.Driver):
     def _push_fonts(self):
         self._log_debug('Pushing fonts')
         path_to_ahem_font = self._port._build_path('AHEM____.TTF')
-        self._push_file_if_needed(path_to_ahem_font, DEVICE_FONTS_DIR + 'AHEM____.TTF')
+        self._device.push_file_if_needed(path_to_ahem_font, DEVICE_FONTS_DIR + 'AHEM____.TTF')
         for (host_dirs, font_file, package) in HOST_FONT_FILES:
             for host_dir in host_dirs:
                 host_font_path = host_dir + font_file
                 if self._port._check_file_exists(host_font_path, '', logging=False):
-                    self._push_file_if_needed(host_font_path, DEVICE_FONTS_DIR + font_file)
+                    self._device.push_file_if_needed(host_font_path, DEVICE_FONTS_DIR + font_file)
 
     def _push_test_resources(self):
         self._log_debug('Pushing test resources')
         for resource in TEST_RESOURCES_TO_PUSH:
-            self._push_file_if_needed(self._port.layout_tests_dir() + '/' + resource, DEVICE_LAYOUT_TESTS_DIR + resource)
+            self._device.push_file_if_needed(self._port.layout_tests_dir() + '/' + resource, DEVICE_LAYOUT_TESTS_DIR + resource)
 
     def _restart_adb_as_root(self):
         output = self._run_adb_command(['root'])
@@ -503,17 +513,6 @@ class ChromiumAndroidDriver(driver.Driver):
     # FIXME: This method is deprecated, all callers should move to appropriate alternatives on self._device.
     def _run_adb_command(self, cmd, ignore_error=False):
         return self._device._run_adb_command(cmd, ignore_error=ignore_error)
-
-    def _link_device_file(self, from_file, to_file, ignore_error=False):
-        # rm to_file first to make sure that ln succeeds.
-        self._run_adb_command(['shell', 'rm', to_file], ignore_error)
-        return self._run_adb_command(['shell', 'ln', '-s', from_file, to_file], ignore_error)
-
-    def _push_to_device(self, host_path, device_path, ignore_error=False):
-        return self._run_adb_command(['push', host_path, device_path], ignore_error)
-
-    def _pull_from_device(self, device_path, host_path, ignore_error=False):
-        return self._run_adb_command(['pull', device_path, host_path], ignore_error)
 
     def _get_last_stacktrace(self):
         tombstones = self._run_adb_command(['shell', 'ls', '-n', '/data/tombstones'])
@@ -570,10 +569,6 @@ class ChromiumAndroidDriver(driver.Driver):
         # The command line passed to the DRT process is returned by _drt_cmd_line() instead.
         return self._adb_command() + ['shell']
 
-    def _file_exists_on_device(self, full_file_path):
-        assert full_file_path.startswith('/')
-        return self._run_adb_command(['shell', 'ls', full_file_path]).strip() == full_file_path
-
     def _drt_cmd_line(self, pixel_tests, per_test_args):
         return driver.Driver.cmd_line(self, pixel_tests, per_test_args) + ['--create-stdin-fifo', '--separate-stderr-fifo']
 
@@ -586,17 +581,17 @@ class ChromiumAndroidDriver(driver.Driver):
         return False
 
     def _all_pipes_created(self):
-        return (self._file_exists_on_device(self._in_fifo_path) and
-                self._file_exists_on_device(self._out_fifo_path) and
-                self._file_exists_on_device(self._err_fifo_path))
+        return (self._device.file_exists_on_device(self._in_fifo_path) and
+                self._device.file_exists_on_device(self._out_fifo_path) and
+                self._device.file_exists_on_device(self._err_fifo_path))
 
     def _remove_all_pipes(self):
         for file in [self._in_fifo_path, self._out_fifo_path, self._err_fifo_path]:
             self._run_adb_command(['shell', 'rm', file])
 
-        return (not self._file_exists_on_device(self._in_fifo_path) and
-                not self._file_exists_on_device(self._out_fifo_path) and
-                not self._file_exists_on_device(self._err_fifo_path))
+        return (not self._device.file_exists_on_device(self._in_fifo_path) and
+                not self._device.file_exists_on_device(self._out_fifo_path) and
+                not self._device.file_exists_on_device(self._err_fifo_path))
 
     def run_test(self, driver_input, stop_when_done):
         base = self._port.lookup_virtual_test_base(driver_input.test_name)
