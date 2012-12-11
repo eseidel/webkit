@@ -189,7 +189,7 @@ class DeviceConnection(object):
         self._log_debug('Run adb result: ' + result[:80])
         return result
 
-    def push_to_device(self, host_path, device_path, ignore_error=False):
+    def push_file(self, host_path, device_path, ignore_error=False):
         return self._run_adb_command(['push', host_path, device_path], ignore_error)
 
     def write_text_file(self, path, contents):
@@ -199,9 +199,9 @@ class DeviceConnection(object):
     def read_text_file(self, path):
         return self.shell(['cat', path])
 
-    def file_exists_on_device(self, full_file_path):
-        assert full_file_path.startswith('/')
-        return self.shell(['ls', full_file_path]).strip() == full_file_path
+    def exists(self, absolute_path):
+        assert absolute_path.startswith('/')
+        return self.shell(['ls', absolute_path]).strip() == absolute_path
 
     def shell(self, cmd):
         # FIXME: adb shell is known to never exit non-zero, but there are workarounds we should use:
@@ -233,7 +233,7 @@ class DeviceConnection(object):
                                                 stdout=subprocess.PIPE).stdout)
         if host_hashes and device_hashes == host_hashes:
             return
-        self.push_to_device(host_file, device_file)
+        self.push_file(host_file, device_file)
 
 
 class ChromiumAndroidPort(chromium.ChromiumPort):
@@ -463,8 +463,8 @@ class ChromiumAndroidDriver(driver.Driver):
 
     def _setup_md5sum_and_push_data_if_needed(self):
         self._md5sum_path = self._port.path_to_md5sum()
-        if not self._device.file_exists_on_device(MD5SUM_DEVICE_PATH):
-            if not self._device.push_to_device(self._md5sum_path, MD5SUM_DEVICE_PATH):
+        if not self._device.exists(MD5SUM_DEVICE_PATH):
+            if not self._device.push_file(self._md5sum_path, MD5SUM_DEVICE_PATH):
                 raise AssertionError('Could not push md5sum to device')
 
         self._push_executable()
@@ -600,17 +600,17 @@ class ChromiumAndroidDriver(driver.Driver):
         return False
 
     def _all_pipes_created(self):
-        return (self._device.file_exists_on_device(self._in_fifo_path) and
-                self._device.file_exists_on_device(self._out_fifo_path) and
-                self._device.file_exists_on_device(self._err_fifo_path))
+        return (self._device.exists(self._in_fifo_path) and
+                self._device.exists(self._out_fifo_path) and
+                self._device.exists(self._err_fifo_path))
 
     def _remove_all_pipes(self):
         for file in [self._in_fifo_path, self._out_fifo_path, self._err_fifo_path]:
             self._device.remove(file)
 
-        return (not self._device.file_exists_on_device(self._in_fifo_path) and
-                not self._device.file_exists_on_device(self._out_fifo_path) and
-                not self._device.file_exists_on_device(self._err_fifo_path))
+        return (not self._device.exists(self._in_fifo_path) and
+                not self._device.exists(self._out_fifo_path) and
+                not self._device.exists(self._err_fifo_path))
 
     def run_test(self, driver_input, stop_when_done):
         base = self._port.lookup_virtual_test_base(driver_input.test_name)
