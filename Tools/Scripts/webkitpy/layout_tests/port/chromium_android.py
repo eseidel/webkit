@@ -160,6 +160,16 @@ class DeviceConnection(object):
     def identifier(self):
         return self._device_serial
 
+    def connect_as_root(self):
+        output = self._run_adb_command(['root'])
+        if 'adbd is already running as root' in output:
+            return
+        elif not 'restarting adbd as root' in output:
+            self._log_error('Unrecognized output from adb root: %s' % output)
+
+        # Regardless the output, give the device a moment to come back online.
+        self._run_adb_command(['wait-for-device'])
+
     def _adb_command(self):
         return [self._adb_path, '-s', self._device_serial]
 
@@ -465,7 +475,7 @@ class ChromiumAndroidDriver(driver.Driver):
         if self._has_setup:
             return
 
-        self._restart_adb_as_root()
+        self._device.connect_as_root()
         self._setup_md5sum_and_push_data_if_needed()
         self._has_setup = True
         self._setup_performance()
@@ -518,16 +528,6 @@ class ChromiumAndroidDriver(driver.Driver):
         self._log_debug('Pushing test resources')
         for resource in TEST_RESOURCES_TO_PUSH:
             self._device.push_file_if_needed(self._port.layout_tests_dir() + '/' + resource, DEVICE_LAYOUT_TESTS_DIR + resource)
-
-    def _restart_adb_as_root(self):
-        output = self._run_adb_command(['root'])
-        if 'adbd is already running as root' in output:
-            return
-        elif not 'restarting adbd as root' in output:
-            self._log_error('Unrecognized output from adb root: %s' % output)
-
-        # Regardless the output, give the device a moment to come back online.
-        self._run_adb_command(['wait-for-device'])
 
     # FIXME: This method is deprecated, all callers should move to appropriate alternatives on self._device.
     def _run_adb_command(self, cmd, ignore_error=False):
