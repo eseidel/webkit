@@ -184,6 +184,13 @@ class DeviceConnection(object):
     def push_to_device(self, host_path, device_path, ignore_error=False):
         return self._run_adb_command(['push', host_path, device_path], ignore_error)
 
+    def write_text_file(self, path, contents):
+        # FIXME: This does not handle unicode.
+        self._run_adb_command(['shell', 'echo', contents, '>', path])
+
+    def read_text_file(self, path):
+        return self._run_adb_command(['shell', 'cat', path])
+
     def file_exists_on_device(self, full_file_path):
         assert full_file_path.startswith('/')
         return self._run_adb_command(['shell', 'ls', full_file_path]).strip() == full_file_path
@@ -536,7 +543,7 @@ class ChromiumAndroidDriver(driver.Driver):
         # stack trace into a human readable format, if needed.
         # It takes a long time, so don't do it here.
         return '%s\n%s' % (' '.join(last_tombstone),
-                           self._run_adb_command(['shell', 'cat', '/data/tombstones/' + last_tombstone[6]]))
+                           self._device.read_text_file('/data/tombstones/' + last_tombstone[6]))
 
     def _get_logcat(self):
         return self._run_adb_command(['logcat', '-d', '-v', 'threadtime'])
@@ -547,12 +554,12 @@ class ChromiumAndroidDriver(driver.Driver):
             governor_files = self._run_adb_command(['shell', 'ls', SCALING_GOVERNORS_PATTERN])
             if governor_files.find('No such file or directory') == -1:
                 for file in governor_files.split():
-                    self._original_governors[file] = self._run_adb_command(['shell', 'cat', file]).strip()
-                    self._run_adb_command(['shell', 'echo', 'performance', '>', file])
+                    self._original_governors[file] = self._device.read_text_file(file).strip()
+                    self._device.write_text_file(file, 'performance')
 
     def _teardown_performance(self):
         for file, original_content in self._original_governors.items():
-            self._run_adb_command(['shell', 'echo', original_content, '>', file])
+            self._device.write_text_file(file, original_content)
         self._original_governors = {}
 
     def _get_crash_log(self, stdout, stderr, newer_than):
@@ -630,7 +637,7 @@ class ChromiumAndroidDriver(driver.Driver):
         self._forwarder_process.start()
 
         self._run_adb_command(['logcat', '-c'])
-        self._run_adb_command(['shell', 'echo'] + self._cmd_line + ['>', COMMAND_LINE_FILE])
+        self._device.write_text_file(COMMAND_LINE_FILE, self._cmd_line)
         start_result = self._run_adb_command(['shell', 'am', 'start', '-e', 'RunInSubThread', '-n', DRT_ACTIVITY_FULL_NAME])
         if start_result.find('Exception') != -1:
             self._log_error('Failed to start DumpRenderTree application. Exception:\n' + start_result)
