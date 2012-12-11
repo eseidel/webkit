@@ -150,6 +150,36 @@ TEST_RESOURCES_TO_PUSH = [
 MD5SUM_DEVICE_FILE_NAME = 'md5sum_bin'
 MD5SUM_DEVICE_PATH = '/data/local/tmp/' + MD5SUM_DEVICE_FILE_NAME
 
+
+class DeviceConnection(object):
+    def __init__(self, executive, adb_path, device_serial):
+        self._executive = executive
+        self._adb_path = adb_path
+        self._device_serial = device_serial
+
+    def identifier(self):
+        return self._device_serial
+
+    def _adb_command(self):
+        return [self._adb_path, '-s', self._device_serial]
+
+    def _log_debug(self, message):
+        _log.debug('[%s] %s' % (self.identifier(), message))
+
+    # FIXME: All callers should move to use more sematic commands.
+    def _run_adb_command(self, cmd, ignore_error=False):
+        self._log_debug('Run adb command: ' + str(cmd))
+        if ignore_error:
+            error_handler = self._executive.ignore_error
+        else:
+            error_handler = None
+        result = self._executive.run_command(self._adb_command() + cmd, error_handler=error_handler)
+        # Limit the length to avoid too verbose output of commands like 'adb logcat' and 'cat /data/tombstones/tombstone01'
+        # whose outputs are normally printed in later logs.
+        self._log_debug('Run adb result: ' + result[:80])
+        return result
+
+
 class ChromiumAndroidPort(chromium.ChromiumPort):
     port_name = 'chromium-android'
 
@@ -369,8 +399,7 @@ class ChromiumAndroidDriver(driver.Driver):
         self._forwarder_process = None
         self._has_setup = False
         self._original_governors = {}
-        self._device_serial = port._get_device_serial(worker_number)
-        self._adb_command_base = None
+        self._device = DeviceConnection(port.host.executive, port.path_to_adb(), port._get_device_serial(worker_number))
 
     def __del__(self):
         self._teardown_performance()
@@ -409,13 +438,13 @@ class ChromiumAndroidDriver(driver.Driver):
         self._run_adb_command(['shell', 'rm', '-r', DRT_APP_CACHE_DIR])
 
     def _log_error(self, message):
-        _log.error('[%s] %s' % (self._device_serial, message))
+        _log.error('[%s] %s' % (self._device.identifier(), message))
 
     def _log_debug(self, message):
-        _log.debug('[%s] %s' % (self._device_serial, message))
+        _log.debug('[%s] %s' % (self._device.identifier(), message))
 
     def _abort(self, message):
-        raise AssertionError('[%s] %s' % (self._device_serial, message))
+        raise AssertionError('[%s] %s' % (self._device.identifier(), message))
 
     @staticmethod
     def _extract_hashes_from_md5sum_output(md5sum_output):
@@ -471,17 +500,9 @@ class ChromiumAndroidDriver(driver.Driver):
         # Regardless the output, give the device a moment to come back online.
         self._run_adb_command(['wait-for-device'])
 
+    # FIXME: This method is deprecated, all callers should move to appropriate alternatives on self._device.
     def _run_adb_command(self, cmd, ignore_error=False):
-        self._log_debug('Run adb command: ' + str(cmd))
-        if ignore_error:
-            error_handler = self._port._executive.ignore_error
-        else:
-            error_handler = None
-        result = self._port._executive.run_command(self._adb_command() + cmd, error_handler=error_handler)
-        # Limit the length to avoid too verbose output of commands like 'adb logcat' and 'cat /data/tombstones/tombstone01'
-        # whose outputs are normally printed in later logs.
-        self._log_debug('Run adb result: ' + result[:80])
-        return result
+        return self._device._run_adb_command(cmd, ignore_error=ignore_error)
 
     def _link_device_file(self, from_file, to_file, ignore_error=False):
         # rm to_file first to make sure that ln succeeds.
@@ -538,10 +559,10 @@ class ChromiumAndroidDriver(driver.Driver):
     def _get_crash_log(self, stdout, stderr, newer_than):
         if not stdout:
             stdout = ''
-        stdout += '********* [%s] Logcat:\n%s' % (self._device_serial, self._get_logcat())
+        stdout += '********* [%s] Logcat:\n%s' % (self._device.identifier(), self._get_logcat())
         if not stderr:
             stderr = ''
-        stderr += '********* [%s] Tombstone file:\n%s' % (self._device_serial, self._get_last_stacktrace())
+        stderr += '********* [%s] Tombstone file:\n%s' % (self._device.identifier(), self._get_last_stacktrace())
         return super(ChromiumAndroidDriver, self)._get_crash_log(stdout, stderr, newer_than)
 
     def cmd_line(self, pixel_tests, per_test_args):
@@ -718,6 +739,4 @@ class ChromiumAndroidDriver(driver.Driver):
             last_char = current_char
 
     def _adb_command(self):
-        if not self._adb_command_base:
-            self._adb_command_base = [self._port.path_to_adb(), '-s', self._device_serial]
-        return self._adb_command_base
+        return self._device._adb_command()
