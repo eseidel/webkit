@@ -235,6 +235,10 @@ class DeviceConnection(object):
             return
         self.push_file(host_file, device_file)
 
+    def push_files_if_needed(self, host_to_device_mapping):
+        for host_path, device_path in host_to_device_mapping.items():
+            self.push_file_if_needed(host_path, device_path)
+
 
 class ChromiumAndroidPort(chromium.ChromiumPort):
     port_name = 'chromium-android'
@@ -503,11 +507,13 @@ class ChromiumAndroidDriver(driver.Driver):
         raise AssertionError('[%s] %s' % (self._device.identifier(), message))
 
     def _push_executable(self):
-        self._device.push_file_if_needed(self._port.path_to_forwarder(), DEVICE_FORWARDER_PATH)
-        self._device.push_file_if_needed(self._port._build_path('DumpRenderTree.pak'), DEVICE_DRT_DIR + 'DumpRenderTree.pak')
-        self._device.push_file_if_needed(self._port._build_path('DumpRenderTree_resources'), DEVICE_DRT_DIR + 'DumpRenderTree_resources')
-        self._device.push_file_if_needed(self._port._build_path('android_main_fonts.xml'), DEVICE_DRT_DIR + 'android_main_fonts.xml')
-        self._device.push_file_if_needed(self._port._build_path('android_fallback_fonts.xml'), DEVICE_DRT_DIR + 'android_fallback_fonts.xml')
+        self._device.push_files_if_needed({
+            self._port.path_to_forwarder(): DEVICE_FORWARDER_PATH,
+            self._port._build_path('DumpRenderTree.pak'): DEVICE_DRT_DIR + 'DumpRenderTree.pak',
+            self._port._build_path('DumpRenderTree_resources'): DEVICE_DRT_DIR + 'DumpRenderTree_resources',
+            self._port._build_path('android_main_fonts.xml'): DEVICE_DRT_DIR + 'android_main_fonts.xml',
+            self._port._build_path('android_fallback_fonts.xml'): DEVICE_DRT_DIR + 'android_fallback_fonts.xml',
+        })
         self._run_adb_command(['uninstall', DRT_APP_PACKAGE])
         drt_host_path = self._port._path_to_driver()
         install_result = self._run_adb_command(['install', drt_host_path])
