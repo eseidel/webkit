@@ -195,6 +195,15 @@ class DeviceConnection(object):
         assert full_file_path.startswith('/')
         return self._run_adb_command(['shell', 'ls', full_file_path]).strip() == full_file_path
 
+    def remove(self, path):
+        self._run_adb_command(['shell', 'rm', path])
+
+    def rmtree(self, path):
+        self._run_adb_command(['shell', 'rm', '-r', path])
+
+    def maybe_make_directory(self, path):
+        self._run_adb_command(['shell', 'mkdir', '-p', path])
+
     @staticmethod
     def _extract_hashes_from_md5sum_output(md5sum_output):
         assert md5sum_output
@@ -460,16 +469,16 @@ class ChromiumAndroidDriver(driver.Driver):
 
         # Required by webkit_support::GetWebKitRootDirFilePath().
         # Other directories will be created automatically by adb push.
-        self._run_adb_command(['shell', 'mkdir', '-p', DEVICE_SOURCE_ROOT_DIR + 'chrome'])
+        self._device.maybe_make_directory(DEVICE_SOURCE_ROOT_DIR + 'chrome')
 
         # Allow the DumpRenderTree app to fully access the directory.
         # The native code needs the permission to write temporary files and create pipes here.
-        self._run_adb_command(['shell', 'mkdir', '-p', DEVICE_DRT_DIR])
+        self._device.maybe_make_directory(DEVICE_DRT_DIR)
         self._run_adb_command(['shell', 'chmod', '777', DEVICE_DRT_DIR])
 
         # Delete the disk cache if any to ensure a clean test run.
         # This is like what's done in ChromiumPort.setup_test_run but on the device.
-        self._run_adb_command(['shell', 'rm', '-r', DRT_APP_CACHE_DIR])
+        self._device.rmtree(DRT_APP_CACHE_DIR)
 
     def _log_error(self, message):
         _log.error('[%s] %s' % (self._device.identifier(), message))
@@ -594,7 +603,7 @@ class ChromiumAndroidDriver(driver.Driver):
 
     def _remove_all_pipes(self):
         for file in [self._in_fifo_path, self._out_fifo_path, self._err_fifo_path]:
-            self._run_adb_command(['shell', 'rm', file])
+            self._device.remove(file)
 
         return (not self._device.file_exists_on_device(self._in_fifo_path) and
                 not self._device.file_exists_on_device(self._out_fifo_path) and
