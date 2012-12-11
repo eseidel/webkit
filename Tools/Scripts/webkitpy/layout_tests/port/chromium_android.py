@@ -173,8 +173,6 @@ class DeviceConnection(object):
             error_handler = self._executive.ignore_error
         else:
             error_handler = None
-        # FIXME: adb shell is known to never exit non-zero, but there are workarounds we should use:
-        # https://code.google.com/p/android/issues/detail?id=3254
         result = self._executive.run_command(self._adb_command() + cmd, error_handler=error_handler)
         # Limit the length to avoid too verbose output of commands like 'adb logcat' and 'cat /data/tombstones/tombstone01'
         # whose outputs are normally printed in later logs.
@@ -186,23 +184,28 @@ class DeviceConnection(object):
 
     def write_text_file(self, path, contents):
         # FIXME: This does not handle unicode.
-        self._run_adb_command(['shell', 'echo', contents, '>', path])
+        self.shell(['echo', contents, '>', path])
 
     def read_text_file(self, path):
-        return self._run_adb_command(['shell', 'cat', path])
+        return self.shell(['cat', path])
 
     def file_exists_on_device(self, full_file_path):
         assert full_file_path.startswith('/')
-        return self._run_adb_command(['shell', 'ls', full_file_path]).strip() == full_file_path
+        return self.shell(['ls', full_file_path]).strip() == full_file_path
+
+    def shell(self, cmd):
+        # FIXME: adb shell is known to never exit non-zero, but there are workarounds we should use:
+        # https://code.google.com/p/android/issues/detail?id=3254
+        return self._run_adb_command(['shell'] + cmd)
 
     def remove(self, path):
-        self._run_adb_command(['shell', 'rm', path])
+        self.shell(['rm', path])
 
     def rmtree(self, path):
-        self._run_adb_command(['shell', 'rm', '-r', path])
+        self.shell(['rm', '-r', path])
 
     def maybe_make_directory(self, path):
-        self._run_adb_command(['shell', 'mkdir', '-p', path])
+        self.shell(['mkdir', '-p', path])
 
     @staticmethod
     def _extract_hashes_from_md5sum_output(md5sum_output):
@@ -474,7 +477,7 @@ class ChromiumAndroidDriver(driver.Driver):
         # Allow the DumpRenderTree app to fully access the directory.
         # The native code needs the permission to write temporary files and create pipes here.
         self._device.maybe_make_directory(DEVICE_DRT_DIR)
-        self._run_adb_command(['shell', 'chmod', '777', DEVICE_DRT_DIR])
+        self._device.shell(['chmod', '777', DEVICE_DRT_DIR])
 
         # Delete the disk cache if any to ensure a clean test run.
         # This is like what's done in ChromiumPort.setup_test_run but on the device.
@@ -531,7 +534,7 @@ class ChromiumAndroidDriver(driver.Driver):
         return self._device._run_adb_command(cmd, ignore_error=ignore_error)
 
     def _get_last_stacktrace(self):
-        tombstones = self._run_adb_command(['shell', 'ls', '-n', '/data/tombstones'])
+        tombstones = self._device.shell(['ls', '-n', '/data/tombstones'])
         if not tombstones or tombstones.startswith('/data/tombstones: No such file or directory'):
             self._log_error('DRT crashed, but no tombstone found!')
             return ''
@@ -560,7 +563,7 @@ class ChromiumAndroidDriver(driver.Driver):
     def _setup_performance(self):
         # Disable CPU scaling and drop ram cache to reduce noise in tests
         if not self._original_governors:
-            governor_files = self._run_adb_command(['shell', 'ls', SCALING_GOVERNORS_PATTERN])
+            governor_files = self._device.shell(['ls', SCALING_GOVERNORS_PATTERN])
             if governor_files.find('No such file or directory') == -1:
                 for file in governor_files.split():
                     self._original_governors[file] = self._device.read_text_file(file).strip()
@@ -647,7 +650,7 @@ class ChromiumAndroidDriver(driver.Driver):
 
         self._run_adb_command(['logcat', '-c'])
         self._device.write_text_file(COMMAND_LINE_FILE, self._cmd_line)
-        start_result = self._run_adb_command(['shell', 'am', 'start', '-e', 'RunInSubThread', '-n', DRT_ACTIVITY_FULL_NAME])
+        start_result = self._device.shell(['am', 'start', '-e', 'RunInSubThread', '-n', DRT_ACTIVITY_FULL_NAME])
         if start_result.find('Exception') != -1:
             self._log_error('Failed to start DumpRenderTree application. Exception:\n' + start_result)
             return False
@@ -711,7 +714,7 @@ class ChromiumAndroidDriver(driver.Driver):
             return True
 
     def stop(self):
-        self._run_adb_command(['shell', 'am', 'force-stop', DRT_APP_PACKAGE])
+        self._device.shell(['am', 'force-stop', DRT_APP_PACKAGE])
 
         if self._read_stdout_process:
             self._read_stdout_process.kill()
